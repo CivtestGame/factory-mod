@@ -1,0 +1,1 @@
+minetest.register_node(boiler.get_reg_values())
