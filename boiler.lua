@@ -1,3 +1,5 @@
+f_constants.boiler = {name = minetest.get_current_modname()..":boiler", max_steam = 500, max_steam_push = 10}
+
 local function get_formspec(burn_pct)
     local formspec = {
         "size[8,6]",
@@ -19,16 +21,13 @@ local function boiler_node_timer(pos, elapsed)
 	local fuel_totaltime = meta:get_float("fuel_totaltime") or 0
 
 	local inv = meta:get_inventory()
-	local fuellist
 
 	local fuel
 
 	local update = true
+
 	while elapsed > 0 and update do
 		update = false
-
-		fuellist = inv:get_list("fuel")
-
 
 		local el = math.min(elapsed, fuel_totaltime - fuel_time)
 
@@ -38,12 +37,13 @@ local function boiler_node_timer(pos, elapsed)
 			fuel_time = fuel_time + el
 			-- If there is a cookable item then check if it is ready yet
             --Produce steam here
-            minetest.chat_send_all(el .. " Steam produced!")
+			f_steam.add_steam(pos,el)
+			minetest.chat_send_all(el .. " Steam produced!, the boiler now contains " .. f_steam.get_steam(pos) .. " units of steam")
 		else
 			-- boiler ran out of fuel
 			-- We need to get new fuel
 			local afterfuel
-			fuel, afterfuel = minetest.get_craft_result({method = "fuel", width = 1, items = fuellist})
+			fuel, afterfuel = minetest.get_craft_result({method = "fuel", width = 1, items = inv:get_list("fuel")})
 
             if fuel.time == 0 then
 				-- No valid fuel in fuel list
@@ -72,7 +72,11 @@ local function boiler_node_timer(pos, elapsed)
 
 	if fuel and fuel_totaltime > fuel.time then
 		fuel_totaltime = fuel.time
-    end
+	end
+	
+	local connected_pipes = f_util.find_neighbor_pipes(pos)
+	local transffered = f_steam.transfer_steam(pos,connected_pipes[1], f_constants.boiler.max_steam_push) -- Fix this for situations with multiple attached pipes
+	minetest.chat_send_all("Transferred " .. transffered .. " Units of steam!")
 
     local result = false
 
@@ -86,7 +90,6 @@ local function boiler_node_timer(pos, elapsed)
         meta:set_string("formspec", get_formspec(0))
 	end
 
-
 	meta:set_float("fuel_totaltime", fuel_totaltime)
     meta:set_float("fuel_time", fuel_time)
 
@@ -94,9 +97,9 @@ local function boiler_node_timer(pos, elapsed)
 end
 
 function boiler.get_reg_values()   
-    return minetest.get_current_modname()..":boiler", {
+    return f_constants.boiler.name, {
         description = "Boiler",
-        tiles = {"^[colorize:#802BB1"},
+        tiles = {"^[colorize:#a83232"},
         on_timer = boiler_node_timer,
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         on_construct = function(pos)

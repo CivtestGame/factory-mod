@@ -1,0 +1,65 @@
+function f_steam.get_capacity_left(pos, network) -- Network is optional but preffered. Saves lookups
+	local node = minetest.get_node(pos)
+	if node.name == f_constants.boiler.name then
+		local meta = minetest.get_meta(pos)
+		local steam_units = meta:get_float("steam_units") or 0
+		return f_constants.boiler.max_steam - steam_units
+	elseif node.name == f_constants.pipe.name then
+		if not network then network = pipe.get_network_from_pos(pos) end
+		return pipe.get_max_steam(network) - network.steam_units
+	else minetest.debug("Add steam called with invalid name(" .. node.name .. ")!")
+	end
+end
+
+function f_steam.extract_steam(pos, max_steam, network, network_key) -- Network is optional but preffered. Saves lookups
+	local node = minetest.get_node(pos)
+	if node.name == f_constants.boiler.name then
+		local meta = minetest.get_meta(pos)
+		local steam_units = meta:get_float("steam_units") or 0
+		local extracted_units = math.min(steam_units, max_steam) -- If we have less steam than we're trying to extract, only transfer as much as we have
+		steam_units = steam_units - extracted_units
+		meta:set_float("steam_units", steam_units)
+		return extracted_units
+	elseif node.name == f_constants.pipe.name then
+		if not network then network, network_key = pipe.get_network_from_pos(pos) end
+		local extracted_units = math.min(network.steam_units, max_steam)
+		network.steam_units = network.steam_units - extracted_units
+		pipe.save_pipe_network(network_key, network)
+		minetest.debug("Extracted " .. extracted_units " steam")
+		return extracted_units
+	else minetest.debug("Extract steam called with invalid name(" .. node.name .. ")!")
+	end
+end
+
+function f_steam.add_steam(pos, amount, network, network_key) -- Network is optional but preffered. Saves lookups
+	local node = minetest.get_node(pos)
+	if node.name == f_constants.boiler.name then
+		local meta = minetest.get_meta(pos)
+		local steam_units = meta:get_float("steam_units") or 0
+		local steam_to_add = math.min(amount, f_constants.boiler.max_steam-steam_units)
+		steam_units = steam_units + steam_to_add
+		meta:set_float("steam_units", steam_units)
+		return steam_to_add
+	elseif node.name == f_constants.pipe.name then
+		if not network then network, network_key = pipe.get_network_from_pos(pos) end
+		local max_steam = pipe.get_max_steam(network)
+		local steam_to_add = math.min(amount, max_steam-network.steam_units)
+		network.steam_units = network.steam_units + steam_to_add
+		pipe.save_pipe_network(network_key, network)
+		minetest.debug("Added " .. steam_to_add .. " steam")
+		return steam_to_add
+	else minetest.debug("Add steam called with invalid name(" .. node.name .. ")!")
+	end
+end
+
+function f_steam.transfer_steam(from, to, max_amount)
+	local to_transfer = math.min(f_steam.get_capacity_left(to), max_amount)
+    local extracted = f_steam.extract_steam(from, to_transfer)
+    f_steam.add_steam(to, extracted)
+    return extracted
+end
+
+function f_steam.get_steam(pos) --TODO: Add pipe networks
+    local meta = minetest.get_meta(pos)
+	return meta:get_float("steam_units") or 0
+end
