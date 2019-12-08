@@ -5,9 +5,9 @@ function f_steam.get_capacity_left(pos, network) -- Network is optional but pref
 		local steam_units = meta:get_float("steam_units") or 0
 		return f_constants.boiler.max_steam - steam_units
 	elseif node.name == f_constants.pipe.name then
-		if not network then network = pipe.get_network_from_pos(pos) end
+		if network == nil then network = pipe.get_network_from_pos(pos) end
 		return pipe.get_max_steam(network) - network.steam_units
-	else minetest.debug("Add steam called with invalid name(" .. node.name .. ")!")
+	else minetest.debug("Get capacity called with invalid name(" .. node.name .. ")!")
 	end
 end
 
@@ -25,7 +25,6 @@ function f_steam.extract_steam(pos, max_steam, network, network_key) -- Network 
 		local extracted_units = math.min(network.steam_units, max_steam)
 		network.steam_units = network.steam_units - extracted_units
 		pipe.save_pipe_network(network_key, network)
-		minetest.debug("Extracted " .. extracted_units " steam")
 		return extracted_units
 	else minetest.debug("Extract steam called with invalid name(" .. node.name .. ")!")
 	end
@@ -46,7 +45,6 @@ function f_steam.add_steam(pos, amount, network, network_key) -- Network is opti
 		local steam_to_add = math.min(amount, max_steam-network.steam_units)
 		network.steam_units = network.steam_units + steam_to_add
 		pipe.save_pipe_network(network_key, network)
-		minetest.debug("Added " .. steam_to_add .. " steam")
 		return steam_to_add
 	else minetest.debug("Add steam called with invalid name(" .. node.name .. ")!")
 	end
@@ -59,7 +57,13 @@ function f_steam.transfer_steam(from, to, max_amount)
     return extracted
 end
 
-function f_steam.get_steam(pos) --TODO: Add pipe networks
-    local meta = minetest.get_meta(pos)
-	return meta:get_float("steam_units") or 0
+function f_steam.get_steam(pos)
+	local node = minetest.get_node(pos)
+	if node.name == f_constants.boiler.name then
+		local meta = minetest.get_meta(pos)
+		return meta:get_float("steam_units") or 0
+	elseif node.name == f_constants.pipe.name then
+		return pipe.get_network_from_pos(pos).steam_units or 0
+	else minetest.debug("Get steam called with invalid name(" .. node.name .. ")!")
+	end
 end

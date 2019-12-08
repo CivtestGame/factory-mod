@@ -8,13 +8,12 @@ local function save_pipe_networks(networks)
     factory_mod_storage:set_string("pipe_networks", minetest.serialize(networks))
 end
 
-local function create_new_pipe_network(pos1, pos2, name)
-    minetest.debug("Creating new nework!")
+local function create_new_pipe_network(pos, name)
     local new_network = {}
-    new_network.min_pos = f_util.get_min_pos(pos1,pos2)
-    new_network.max_pos = f_util.get_max_pos(pos1,pos2)
+    new_network.min_pos = pos
+    new_network.max_pos = pos
     new_network.steam_units = 0
-    new_network.pipes = {pos1,pos2}
+    new_network.pipes = {pos}
     local networks = get_pipe_networks()
     if name == nil then -- THis code can probably be replaced with table.getn()
         local count = 0
@@ -29,15 +28,20 @@ local function create_new_pipe_network(pos1, pos2, name)
     save_pipe_networks(networks)
 end
 
-local function add_to_pipe_network(pipe_pos, network_key)
-    local network = get_pipe_networks()[network_key]
+local function delete_pipe_network(network_key)
+    local networks = get_pipe_networks()
+    table.remove(networks, network_key)
+    save_pipe_networks(networks)
+end
+
+local function add_to_pipe_network(pipe_pos, netowrk, network_key)
     network.min_pos = f_util.get_min_pos(network.min_pos, pipe_pos)
     network.max_pos = f_util.get_max_pos(network.max_pos, pipe_pos)
     table.insert(network.pipes, pipe_pos)
     pipe.save_pipe_network(network_key, network)
 end
 
-local function remove_pipe(pipe_pos) --TODO: Handle network splits, and remove network if we remove the last pipe
+local function remove_pipe(pipe_pos) --TODO: Handle network splits
     local network,network_key = pipe.get_network_from_pos(pipe_pos)
     minetest.debug("Removing pipe at " .. f_util.dump(pipe_pos))
     if network ~= nil then
@@ -67,29 +71,29 @@ local function remove_pipe(pipe_pos) --TODO: Handle network splits, and remove n
         if update_min then network.min_pos = new_min_pos end
         if update_max then network.max_pos = new_max_pos end
     end
-    pipe.save_pipe_network(network_key,network)
+    if table.getn(network.pipes) > 0 then pipe.save_pipe_network(network_key,network)
+    else delete_pipe_network(network_key) end
 end
 
 local function pipe_affer_construct(pos,player) --Takes location of a new pipe and figures out what network to add it to
     local connected_pipes = f_util.find_neighbor_pipes(pos)
-    minetest.debug("on construct")
-    if connected_pipes[1] ~= nil then
-        minetest.debug("One pipe detected")
-        if connected_pipes[2] ~= nil then --Check to see if there is more than one connected pipe
+    if table.getn(connected_pipes) > 0 then
+        if table.getn(connected_pipes) > 1 then --Check to see if there is more than one connected pipe
             minetest.chat_send_player(player:get_player_name(),"Nope! Too many pipes")
             return
         end
-        local network_key = pipe.get_network_key(connected_pipes[1])
-        minetest.debug(network_key)
+        local network, network_key = pipe.get_network_from_pos(connected_pipes[1])
         if network_key ~= nil then
-            add_to_pipe_network(pos,network_key)
+            add_to_pipe_network(pos,network, network_key)
         else
-            create_new_pipe_network(connected_pipes[1], pos)
+            minetest.debug("Pipe on construct error! Check source code")
         end
+    else -- No connected pipes 
+        create_new_pipe_network(pos)
     end
 end
 
---Start of global values
+--Start of global methods
 
 function pipe.get_reg_values()
     return f_constants.pipe.name, {
@@ -103,7 +107,7 @@ function pipe.get_reg_values()
             remove_pipe(pos)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_player(player:get_player_name(), "This pipe network contains " .. pipe.get_network_from_pos(pos).steam_units .. " units of steam")
+            minetest.chat_send_player(player:get_player_name(), "This pipe network contains " .. f_steam.get_steam(pos) .. " units of steam")
         end,
     }
 end

@@ -75,7 +75,11 @@ local function boiler_node_timer(pos, elapsed)
 	end
 	
 	local connected_pipes = f_util.find_neighbor_pipes(pos)
-	local transffered = f_steam.transfer_steam(pos,connected_pipes[1], f_constants.boiler.max_steam_push) -- Fix this for situations with multiple attached pipes
+	local steam_per_pipe = f_constants.boiler.max_steam_push / table.getn(connected_pipes)
+	local transffered = 0
+	for i, pipe in pairs(connected_pipes) do
+		transffered = transffered + f_steam.transfer_steam(pos, pipe, steam_per_pipe)
+	end
 	minetest.chat_send_all("Transferred " .. transffered .. " Units of steam!")
 
     local result = false
