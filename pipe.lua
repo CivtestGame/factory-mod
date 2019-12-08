@@ -34,7 +34,7 @@ local function delete_pipe_network(network_key)
     save_pipe_networks(networks)
 end
 
-local function add_to_pipe_network(pipe_pos, netowrk, network_key)
+local function add_to_pipe_network(pipe_pos, network, network_key)
     network.min_pos = f_util.get_min_pos(network.min_pos, pipe_pos)
     network.max_pos = f_util.get_max_pos(network.max_pos, pipe_pos)
     table.insert(network.pipes, pipe_pos)
