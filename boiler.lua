@@ -39,7 +39,6 @@ local function boiler_node_timer(pos, elapsed)
 			-- If there is a cookable item then check if it is ready yet
             --Produce steam here
 			f_steam.add_steam(pos,el*f_constants.boiler.steam_produced_per_second)
-			minetest.chat_send_all(el .. " Steam produced!, the boiler now contains " .. f_steam.get_steam(pos) .. " units of steam")
 		else
 			-- boiler ran out of fuel
 			-- We need to get new fuel
@@ -81,7 +80,6 @@ local function boiler_node_timer(pos, elapsed)
 	for i, pipe in pairs(connected_pipes) do
 		transffered = transffered + f_steam.transfer_steam(pos, pipe, steam_per_pipe)
 	end
-	minetest.chat_send_all("Transferred " .. transffered .. " Units of steam!")
 
     local result = false
 
@@ -99,6 +97,10 @@ local function boiler_node_timer(pos, elapsed)
     meta:set_float("fuel_time", fuel_time)
 
 	return result
+end
+
+function boiler.update_infotext(meta)
+	meta:set_string("infotext",  "Contains " .. meta:get_float("steam_units") .. " units of steam")
 end
 
 function boiler.get_reg_values()   

@@ -5,6 +5,7 @@ f_steam = {}
 boiler = {}
 pipe = {}
 turbine = {}
+wire = {}
 f_constants = {}
 
 factory_mod_storage = minetest.get_mod_storage()
@@ -18,6 +19,7 @@ dofile(modpath .. "/steam.lua")
 dofile(modpath .. "/boiler.lua")
 dofile(modpath .. "/turbine.lua")
 dofile(modpath .. "/pipe.lua")
+dofile(modpath .. "/wire.lua")
 dofile(modpath .. "/api.lua")
 dofile(modpath .. "/smelter.lua")
 

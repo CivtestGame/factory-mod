@@ -70,9 +70,10 @@ local function remove_pipe(pipe_pos) --TODO: Handle network splits
         minetest.debug(f_util.dump(new_max_pos))
         if update_min then network.min_pos = new_min_pos end
         if update_max then network.max_pos = new_max_pos end
+
+        if table.getn(network.pipes) > 0 then pipe.save_pipe_network(network_key,network)
+        else delete_pipe_network(network_key) end
     end
-    if table.getn(network.pipes) > 0 then pipe.save_pipe_network(network_key,network)
-    else delete_pipe_network(network_key) end
 end
 
 local function pipe_affer_construct(pos,player) --Takes location of a new pipe and figures out what network to add it to
@@ -103,12 +104,7 @@ function pipe.get_reg_values()
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             pipe_affer_construct(pos,placer)
         end,
-        on_destruct = function (pos)
-            remove_pipe(pos)
-        end,
-        on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_player(player:get_player_name(), "This pipe network contains " .. f_steam.get_steam(pos) .. " units of steam")
-        end,
+        on_destruct = remove_pipe,
     }
 end
 
@@ -143,4 +139,11 @@ end
 
 function pipe.get_max_steam(network)
         return table.getn(network.pipes)*f_constants.pipe.max_steam
+end
+
+function pipe.update_infotext(network)
+    for _, pos in pairs(network.pipes) do
+        local meta = minetest.get_meta(pos)
+        meta:set_string("infotext",  "Contains " .. network.steam_units .. " units of steam")
+    end
 end
