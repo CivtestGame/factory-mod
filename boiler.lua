@@ -1,4 +1,4 @@
-f_constants.boiler = {name = minetest.get_current_modname()..":boiler", max_steam = 500, max_steam_push = 10}
+f_constants.boiler = {name = minetest.get_current_modname()..":boiler", max_steam = 500, max_steam_push = 10, steam_produced_per_second = 5}
 
 local function get_formspec(burn_pct)
     local formspec = {
@@ -16,6 +16,7 @@ local function boiler_node_timer(pos, elapsed)
 	--
 	-- Initialize metadata
 	--
+	local time_elapsed = elapsed
 	local meta = minetest.get_meta(pos)
 	local fuel_time = meta:get_float("fuel_time") or 0
 	local fuel_totaltime = meta:get_float("fuel_totaltime") or 0
@@ -37,7 +38,7 @@ local function boiler_node_timer(pos, elapsed)
 			fuel_time = fuel_time + el
 			-- If there is a cookable item then check if it is ready yet
             --Produce steam here
-			f_steam.add_steam(pos,el)
+			f_steam.add_steam(pos,el*f_constants.boiler.steam_produced_per_second)
 			minetest.chat_send_all(el .. " Steam produced!, the boiler now contains " .. f_steam.get_steam(pos) .. " units of steam")
 		else
 			-- boiler ran out of fuel
@@ -75,7 +76,7 @@ local function boiler_node_timer(pos, elapsed)
 	end
 	
 	local connected_pipes = f_util.find_neighbor_pipes(pos)
-	local steam_per_pipe = f_constants.boiler.max_steam_push / table.getn(connected_pipes)
+	local steam_per_pipe = f_constants.boiler.max_steam_push*time_elapsed / table.getn(connected_pipes)
 	local transffered = 0
 	for i, pipe in pairs(connected_pipes) do
 		transffered = transffered + f_steam.transfer_steam(pos, pipe, steam_per_pipe)
