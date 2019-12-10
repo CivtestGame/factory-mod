@@ -319,3 +319,41 @@ minetest.register_node("factory_mod:advanced_smelter_active", {
         on_receive_fields = advanced_smelter_fns.on_receive_fields,
         on_timer = advanced_smelter_fns.on_timer
 })
+
+--------------------------------------------------------------------------------
+--
+-- Smelter Hat
+--
+--------------------------------------------------------------------------------
+
+-- GENERATED CODE
+-- Node Box Editor, version 0.9.0
+-- Namespace: test
+
+minetest.register_node(
+   "factory_mod:smelter_exhaust",
+   {
+      description = "Smelter Exhaust",
+      tiles = {
+         "default_furnace_bottom.png",
+         "default_furnace_bottom.png",
+         "default_furnace_side.png",
+         "default_furnace_side.png",
+         "default_furnace_side.png",
+         "default_furnace_side.png"
+      },
+      drawtype = "nodebox",
+      -- paramtype = "light",
+      groups = {cracky = 3, stone = 1},
+      is_ground_content = false,
+      sounds = default.node_sound_stone_defaults(),
+      node_box = {
+         type = "fixed",
+         fixed = {
+            {-0.5, -0.5, -0.5, 0.5, 0, 0.5}, -- NodeBox3
+            {-0.4375, 0, -0.4375, 0.4375, 0.25, 0.4375}, -- NodeBox4
+            {-0.3125, 0.25, -0.3125, 0.3125, 0.375, 0.3125}, -- NodeBox5
+            {-0.1875, 0.375, -0.1875, 0.1875, 0.5, 0.1875}, -- NodeBox6
+         }
+      }
+})
