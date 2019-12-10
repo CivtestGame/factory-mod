@@ -374,7 +374,7 @@ minetest.register_node(
          "default_ingot_catcher_left_right.png",
          "default_ingot_catcher_left_right.png",
          "default_ingot_catcher_left_right.png",
-         "default_ingot_catcher_side.png",
+         "default_ingot_catcher_side2.png",
          "default_ingot_catcher_side.png"
       },
       drawtype = "nodebox",
