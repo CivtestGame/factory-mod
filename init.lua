@@ -1,7 +1,7 @@
 fm = {}
 
 f_util = {}
-network = {}
+node_network = {}
 f_steam = {}
 boiler = {}
 pipe = {}

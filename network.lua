@@ -1,13 +1,13 @@
-function network.get_set(set_name)
-    return minetest.deserialize(factory_mod_storage:get_string(set_name)) or {}
+function node_network.get_set(set_name)
+    return minetest.deserialize(factory_mod_storage:get_string(set_name .. "_network")) or {}
 end
 
-function network.save_set(set_name, set)
-    factory_mod_storage:set_string(set_name, minetest.serialize(set))
+function node_network.save_set(set_name, set)
+    factory_mod_storage:set_string(set_name .. "_network", minetest.serialize(set))
 end
 
-function network.get_network(set_name, pos)
-    for key, network in pairs(network.get_set(set_name)) do
+function node_network.get_network(set_name, pos)
+    for key, network in pairs(node_network.get_set(set_name)) do
         local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos})
         if networkArea:containsp(pos) then
             for _,node in pairs(network.nodes) do
@@ -19,14 +19,14 @@ function network.get_network(set_name, pos)
     end 
 end
 
-function network.save_network(set_name, network, network_key, set)
-    set = set or network.get_set(set_name)
+function node_network.save_network(set_name, network, network_key, set)
+    set = set or node_network.get_set(set_name)
     set[network_key] = network
-    network.save_set(set_name, set)
+    node_network.save_set(set_name, set)
 end
 
-function network.create_network(set_name, initial_node, set)
-    set = set or network.get_set(set_name)
+function node_network.create_network(set_name, initial_node, set)
+    set = set or node_network.get_set(set_name)
     local new_network = {}
     new_network.min_pos = initial_node
     new_network.max_pos = initial_node
@@ -40,25 +40,25 @@ function network.create_network(set_name, initial_node, set)
         if set[count] == nil then new_name = false end
     end
     set[count] = new_network
-    network.save_set(set_name, set)
+    node_network.save_set(set_name, set)
     return new_network
 end
 
-function network.delete_network(set_name, network_key, set)
-    set = set or network.get_set(set_name)
+function node_network.delete_network(set_name, network_key, set)
+    set = set or node_network.get_set(set_name)
     table.remove(set, network_key)
-    network.save_set(set)
+    node_network.save_set(set)
 end
 
-function network.add_node(set_name, node_pos, network, network_key)
+function node_network.add_node(set_name, node_pos, network, network_key)
     network.min_pos = f_util.get_min_pos(network.min_pos, node_pos)
     network.max_pos = f_util.get_max_pos(network.max_pos, node_pos)
     table.insert(network.nodes, node_pos)
-    network.save_network(set_name, network, network_key)
+    node_network.save_network(set_name, network, network_key)
 end
 
-function network.remove_node(set_name, node_pos, network, network_key)
-    if network == nil then network,network_key = network.get_network(set_name, node_pos) end
+function node_network.remove_node(set_name, node_pos, network, network_key)
+    if network == nil then network,network_key = node_network.get_network(set_name, node_pos) end
     minetest.debug("Removing node at " .. f_util.dump(node_pos))
     if network ~= nil then
         --If yes, for every edge we are on, subtract 1
@@ -87,7 +87,7 @@ function network.remove_node(set_name, node_pos, network, network_key)
         if update_min then network.min_pos = new_min_pos end
         if update_max then network.max_pos = new_max_pos end
 
-        if table.getn(network.nodes) > 0 then network.save_network(set_name, network, network_key)
-        else network.delete_network(set_name, network_key) end
+        if table.getn(network.nodes) > 0 then node_network.save_network(set_name, network, network_key)
+        else node_network.delete_network(set_name, network_key) end
     end
 end
