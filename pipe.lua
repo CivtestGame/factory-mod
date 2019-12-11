@@ -1,9 +1,5 @@
 f_constants.pipe = {name = minetest.get_current_modname()..":pipe", max_steam = 10}
 
-local function get_pipe_networks()
-    return minetest.deserialize(factory_mod_storage:get_string("pipe_networks")) or {}
-end
-
 local function pipe_affer_construct(pos,player) --Takes location of a new pipe and figures out what network to add it to
     local connected_pipes = f_util.find_neighbor_pipes(pos)
     if table.getn(connected_pipes) > 0 then
@@ -32,9 +28,12 @@ function pipe.get_reg_values()
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             pipe_affer_construct(pos,placer)
         end,
-        on_destruct = function(pos)
+        after_destruct = function(pos, old_node)
             node_network.remove_node("pipe", pos)
         end,
+        on_rightclick = function(pos, node, player, itemstack, pointed_thing)
+            minetest.chat_send_all(f_util.dump(node_network.get_network("pipe",pos)))
+        end
     }
 end
 
