@@ -57,35 +57,23 @@ function node_network.add_node(set_name, node_pos, network, network_key)
     node_network.save_network(set_name, network, network_key)
 end
 
-function node_network.remove_node(set_name, node_pos, network, network_key)
+function node_network.remove_node(set_name, node_pos, network, network_key, ensure_continuity)
     if network == nil then network,network_key = node_network.get_network(set_name, node_pos) end
     minetest.debug("Removing node at " .. f_util.dump(node_pos))
     if network ~= nil then
-        --If yes, for every edge we are on, subtract 1
-        local update_min = false
-        local update_max = false
-        --We might need these values if we have to upadte the min/max pos
-        local new_min_pos = network.nodes[1]
-        local new_max_pos = network.nodes[1]
-        --Check if the node we are removing is on the edge of the network. If it is we will have to update the corresponding max/min position
-        local x_diff = network.min_pos.x ~= network.max_pos.x
-        local y_diff = network.min_pos.y ~= network.max_pos.y
-        local z_diff = network.min_pos.z ~= network.max_pos.z
-        if (x_diff and network.min_pos.x == node_pos.x) or (y_diff and network.min_pos.y == node_pos.y) or (z_diff and network.min_pos.z == node_pos.z) then update_min = true end
-        if (x_diff and network.max_pos.x == node_pos.x) or (y_diff and network.max_pos.y == node_pos.y) or (z_diff and network.max_pos.z == node_pos.z) then update_max = true end
-        minetest.debug("Update min/max is " .. tostring(update_min) .. tostring(update_max))
+        --Reset the bounding box to the whole map so it can be shrunk to the right size in the for loop
+        network.min_pos = f_util.map_max_pos
+        network.max_pos = f_util.map_min_pos
         for key,node in pairs(network.nodes) do
             if f_util.is_same_pos(node,node_pos) then
                 table.remove(network.nodes, key)
             else
-                if update_min then new_min_pos = f_util.get_min_pos(new_min_pos, node) end
-                if update_max then new_max_pos = f_util.get_max_pos(new_max_pos, node) end
+                network.min_pos = f_util.get_min_pos(network.min_pos, node)
+                network.max_pos = f_util.get_max_pos(network.max_pos, node)
             end
         end
-        minetest.debug(f_util.dump(new_min_pos))
-        minetest.debug(f_util.dump(new_max_pos))
-        if update_min then network.min_pos = new_min_pos end
-        if update_max then network.max_pos = new_max_pos end
+        minetest.debug(f_util.dump(network.min_pos))
+        minetest.debug(f_util.dump(network.max_pos))
 
         if table.getn(network.nodes) > 0 then node_network.save_network(set_name, network, network_key)
         else node_network.delete_network(set_name, network_key) end

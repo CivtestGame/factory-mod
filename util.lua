@@ -15,6 +15,9 @@ local function get_adjacent_nodes(pos, type)
     return return_pos
 end
 
+f_util.map_max_pos = {x = 30928, y = 30928, z = 30928}
+f_util.map_min_pos = {x = -30928, y = -30928, z = -30928}
+
 function f_util.find_neighbor_pipes(pos)
     return get_adjacent_nodes(pos, f_constants.pipe.name)
 end
