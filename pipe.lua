@@ -1,37 +1,15 @@
 f_constants.pipe = {name = minetest.get_current_modname()..":pipe", max_steam = 10}
 
 local function pipe_affer_construct(pos,player) --Takes location of a new pipe and figures out what network to add it to
-    local connected_pipes = f_util.find_neighbor_pipes(pos)
-    if table.getn(connected_pipes) > 0 then
-        if table.getn(connected_pipes) > 1 then --Check to see if there is more than one connected pipe
-            local networks = {}
-            local network, network_key
-            for _, node in pairs(connected_pipes) do
-                network, network_key = node_network.get_network("pipe", node)
-                network.key = network_key
-                table.insert(networks, network)
-            end
-            minetest.debug(f_util.dump(networks))
-            minetest.debug(f_util.dump(table.getn(networks)))
-            if table.getn(networks) > 1 then
-                node_network.merge_networks("pipe", networks)
-            elseif table.getn(networks) == 1 then
-                -- In this case the network and network_key above can be used
-                network = node_network.add_node(pos,network)
-                node_network.save_network("pipe", network, network_key)
-            else
-                minetest.debug("Error in pipe.lua line 18")
-            end
-        end
-        local network, network_key = node_network.get_network("pipe", connected_pipes[1])
-        if network_key ~= nil then
-            network = node_network.add_node(pos,network)
-            node_network.save_network("pipe", network, network_key)
-        else
-            minetest.debug("Pipe on construct error! Check source code")
-        end
-    else -- No connected pipes 
+    local connected_networks = node_network.get_adjacent_networks("pipe", pos, f_constants.pipe.name)
+    if table.getn(connected_networks) == 0 then
         node_network.create_network("pipe", pos)
+    elseif table.getn(connected_networks) == 1 then
+        local network, network_key = connected_networks[1], connected_networks[1].key
+        network = node_network.add_node(pos,network)
+        node_network.save_network("pipe", network, network_key)
+    else
+        node_network.merge_networks("pipe", connected_networks, pos)
     end
 end
 

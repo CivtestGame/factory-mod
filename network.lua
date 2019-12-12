@@ -8,11 +8,13 @@ end
 
 local function create_new_network(type)
     return {
-        min_pos = f_util.map_max_pos, 
-        max_pos = f_util.map_min_pos, 
+        min_pos = f_util.map_max_pos,
+        max_pos = f_util.map_min_pos,
         type = type,
         nodes = {}}
 end
+
+
 
 --Recursie function to hopefully generate a new network in cases of network splits
 local function recursive_add(network, old_network, pos)
@@ -30,6 +32,8 @@ local function recursive_add(network, old_network, pos)
     end
     return network, old_network
 end
+
+--Start of global methods
 
 function node_network.get_set(set_name)
     return minetest.deserialize(factory_mod_storage:get_string(set_name .. "_network")) or {}
@@ -73,8 +77,20 @@ function node_network.delete_network(set_name, network_key, set)
     node_network.save_set(set_name, set)
 end
 
+function node_network.get_adjacent_networks(set_name, pos, type)
+    local connected_nodes = f_util.get_adjacent_nodes(pos, type)
+    local networks = {}
+    for _, node in pairs(connected_nodes) do
+        local network, network_key = node_network.get_network(set_name, node)
+        network.key = network_key
+        table.insert(networks, network)
+    end
+    return networks
+end
+
 --All netwroks will have to have their network.key set to the correct value
-function node_network.merge_networks(set_name, networks)
+--node is optional, but usefull. Adds the node after the networks are merged
+function node_network.merge_networks(set_name, networks, node)
     local set = node_network.get_set(set_name)
     local new_network = create_new_network(networks[1].type) -- Might want to change this later
     for _, network in pairs(networks) do
@@ -84,6 +100,7 @@ function node_network.merge_networks(set_name, networks)
         minetest.debug("deleting network" .. network.key)
         node_network.delete_network(set_name, network.key, set)
     end
+    new_network = node_network.add_node(node, new_network)
     table.insert(set, new_network)
     node_network.save_set(set_name, set)
 end
