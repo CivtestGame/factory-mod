@@ -4,12 +4,29 @@ local function pipe_affer_construct(pos,player) --Takes location of a new pipe a
     local connected_pipes = f_util.find_neighbor_pipes(pos)
     if table.getn(connected_pipes) > 0 then
         if table.getn(connected_pipes) > 1 then --Check to see if there is more than one connected pipe
-            minetest.chat_send_player(player:get_player_name(),"Nope! Too many pipes")
-            return
+            local networks = {}
+            local network, network_key
+            for _, node in pairs(connected_pipes) do
+                network, network_key = node_network.get_network("pipe", node)
+                network.key = network_key
+                table.insert(networks, network)
+            end
+            minetest.debug(f_util.dump(networks))
+            minetest.debug(f_util.dump(table.getn(networks)))
+            if table.getn(networks) > 1 then
+                node_network.merge_networks("pipe", networks)
+            elseif table.getn(networks) == 1 then
+                -- In this case the network and network_key above can be used
+                network = node_network.add_node(pos,network)
+                node_network.save_network("pipe", network, network_key)
+            else
+                minetest.debug("Error in pipe.lua line 18")
+            end
         end
         local network, network_key = node_network.get_network("pipe", connected_pipes[1])
         if network_key ~= nil then
-            node_network.add_node("pipe", pos,network, network_key)
+            network = node_network.add_node(pos,network)
+            node_network.save_network("pipe", network, network_key)
         else
             minetest.debug("Pipe on construct error! Check source code")
         end
@@ -29,10 +46,10 @@ function pipe.get_reg_values()
             pipe_affer_construct(pos,placer)
         end,
         after_destruct = function(pos, old_node)
-            node_network.remove_node("pipe", pos)
+            node_network.remove_node("pipe", pos, nil, nil, true)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.get_network("pipe",pos)))
+            minetest.chat_send_all(f_util.dump(node_network.get_network("pipe",pos).nodes))
         end
     }
 end
