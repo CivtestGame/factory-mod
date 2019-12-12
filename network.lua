@@ -143,3 +143,16 @@ function node_network.remove_node(set_name, node_pos, network, network_key, ensu
         end
     end
 end
+
+function node_network.on_node_place(set_name, pos, type)
+    local connected_networks = node_network.get_adjacent_networks(set_name, pos, type)
+    if table.getn(connected_networks) == 0 then
+        node_network.create_network(set_name, pos)
+    elseif table.getn(connected_networks) == 1 then
+        local network, network_key = connected_networks[1], connected_networks[1].key
+        network = node_network.add_node(pos,network)
+        node_network.save_network(set_name, network, network_key)
+    else
+        node_network.merge_networks(set_name, connected_networks, pos)
+    end
+end

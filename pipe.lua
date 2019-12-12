@@ -1,27 +1,12 @@
 f_constants.pipe = {name = minetest.get_current_modname()..":pipe", max_steam = 10}
 
-local function pipe_affer_construct(pos,player) --Takes location of a new pipe and figures out what network to add it to
-    local connected_networks = node_network.get_adjacent_networks("pipe", pos, f_constants.pipe.name)
-    if table.getn(connected_networks) == 0 then
-        node_network.create_network("pipe", pos)
-    elseif table.getn(connected_networks) == 1 then
-        local network, network_key = connected_networks[1], connected_networks[1].key
-        network = node_network.add_node(pos,network)
-        node_network.save_network("pipe", network, network_key)
-    else
-        node_network.merge_networks("pipe", connected_networks, pos)
-    end
-end
-
---Start of global methods
-
 function pipe.get_reg_values()
     return f_constants.pipe.name, {
         description = "Pipe",
         tiles = {"^[colorize:#3248a8"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            pipe_affer_construct(pos,placer)
+            node_network.on_node_place("pipe", pos, f_constants.pipe.name)
         end,
         after_destruct = function(pos, old_node)
             node_network.remove_node("pipe", pos, nil, nil, true)
