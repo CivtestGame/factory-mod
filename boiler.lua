@@ -37,7 +37,7 @@ local function boiler_node_timer(pos, elapsed)
 			-- The furnace is currently active and has enough fuel
 			fuel_time = fuel_time + el
 			-- If there is a cookable item then check if it is ready yet
-            --Produce steam here
+			--Produce steam here
 			f_steam.add_steam(pos,el*f_constants.boiler.steam_produced_per_second)
 		else
 			-- boiler ran out of fuel
@@ -77,8 +77,13 @@ local function boiler_node_timer(pos, elapsed)
 	local connected_pipes = f_util.find_neighbor_pipes(pos)
 	local steam_per_pipe = f_constants.boiler.max_steam_push*time_elapsed / table.getn(connected_pipes)
 	local transffered = 0
-	for i, pipe in pairs(connected_pipes) do
-		transffered = transffered + f_steam.transfer_steam(pos, pipe, steam_per_pipe)
+
+	minetest.debug(f_util.dump(pipe))
+	for i, pipe_pos in pairs(connected_pipes) do
+		local to_transfer = math.min(resource_network.get_capacity_left(pipe.set_values, pipe_pos), steam_per_pipe)
+		local extracted = f_steam.extract_steam(pos, to_transfer)
+		resource_network.add(pipe.set_values, pipe_pos, extracted)
+		transffered = transffered + extracted
 	end
 
     local result = false

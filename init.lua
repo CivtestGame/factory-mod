@@ -2,6 +2,7 @@ fm = {}
 
 f_util = {}
 node_network = {}
+resource_network = {}
 f_steam = {}
 boiler = {}
 pipe = {}
@@ -17,6 +18,7 @@ local modpath = minetest.get_modpath(minetest.get_current_modname())
 
 dofile(modpath .. "/util.lua")
 dofile(modpath .. "/network.lua")
+dofile(modpath .. "/resource_network.lua")
 dofile(modpath .. "/steam.lua")
 dofile(modpath .. "/boiler.lua")
 dofile(modpath .. "/turbine.lua")

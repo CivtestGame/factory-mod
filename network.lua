@@ -35,16 +35,16 @@ end
 
 --Start of global methods
 
-function node_network.get_set(set_name)
-    return minetest.deserialize(factory_mod_storage:get_string(set_name .. "_network")) or {}
+function node_network.get_set(set_values)
+    return minetest.deserialize(factory_mod_storage:get_string(set_values.save_id .. "_network")) or {}
 end
 
-function node_network.save_set(set_name, set)
-    factory_mod_storage:set_string(set_name .. "_network", minetest.serialize(set))
+function node_network.save_set(set_values, set)
+    factory_mod_storage:set_string(set_values.save_id .. "_network", minetest.serialize(set))
 end
 
-function node_network.get_network(set_name, pos)
-    for key, network in pairs(node_network.get_set(set_name)) do
+function node_network.get_network(set_values, pos)
+    for key, network in pairs(node_network.get_set(set_values)) do
         local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos})
         if networkArea:containsp(pos) then
             for _,node in pairs(network.nodes) do
@@ -56,32 +56,32 @@ function node_network.get_network(set_name, pos)
     end
 end
 
-function node_network.save_network(set_name, network, network_key, set)
-    set = set or node_network.get_set(set_name)
+function node_network.save_network(set_values, network, network_key, set)
+    set = set or node_network.get_set(set_values)
     set[network_key] = network
-    node_network.save_set(set_name, set)
+    node_network.save_set(set_values, set)
 end
 
-function node_network.create_network(set_name, initial_node, set)
-    set = set or node_network.get_set(set_name)
+function node_network.create_network(set_values, initial_node, set)
+    set = set or node_network.get_set(set_values)
     local new_network = create_new_network(minetest.get_node(initial_node).name)
     new_network = node_network.add_node(initial_node, new_network)
     table.insert(set, new_network)
-    node_network.save_set(set_name, set)
+    node_network.save_set(set_values, set)
     return new_network
 end
 
-function node_network.delete_network(set_name, network_key, set)
-    set = set or node_network.get_set(set_name)
+function node_network.delete_network(set_values, network_key, set)
+    set = set or node_network.get_set(set_values)
     table.remove(set, network_key)
-    node_network.save_set(set_name, set)
+    node_network.save_set(set_values, set)
 end
 
-function node_network.get_adjacent_networks(set_name, pos, type)
+function node_network.get_adjacent_networks(set_values, pos, type)
     local connected_nodes = f_util.get_adjacent_nodes(pos, type)
     local networks = {}
     for _, node in pairs(connected_nodes) do
-        local network, network_key = node_network.get_network(set_name, node)
+        local network, network_key = node_network.get_network(set_values, node)
         network.key = network_key
         table.insert(networks, network)
     end
@@ -90,19 +90,19 @@ end
 
 --All netwroks will have to have their network.key set to the correct value
 --node is optional, but usefull. Adds the node after the networks are merged
-function node_network.merge_networks(set_name, networks, node)
-    local set = node_network.get_set(set_name)
+function node_network.merge_networks(set_values, networks, node)
+    local set = node_network.get_set(set_values)
     local new_network = create_new_network(networks[1].type) -- Might want to change this later
     for _, network in pairs(networks) do
         for i, node in pairs(network.nodes) do
             new_network = node_network.add_node(node, new_network)
         end
         minetest.debug("deleting network" .. network.key)
-        node_network.delete_network(set_name, network.key, set)
+        node_network.delete_network(set_values, network.key, set)
     end
     new_network = node_network.add_node(node, new_network)
     table.insert(set, new_network)
-    node_network.save_set(set_name, set)
+    node_network.save_set(set_values, set)
 end
 
 function node_network.add_node(node_pos, network)
@@ -112,11 +112,11 @@ function node_network.add_node(node_pos, network)
     return network
 end
 
-function node_network.remove_node(set_name, node_pos, network, network_key, ensure_continuity)
-    if network == nil then network,network_key = node_network.get_network(set_name, node_pos) end
+function node_network.on_node_destruction(set_values, node_pos, ensure_continuity)
+    local network,network_key = node_network.get_network(set_values, node_pos)
     if network ~= nil then
         if table.getn(f_util.get_adjacent_nodes(node_pos, network.type)) > 1 and ensure_continuity == true then
-            local set = node_network.get_set(set_name)
+            local set = node_network.get_set(set_values)
             delete_node(network, node_pos)
             while table.getn(network.nodes) > 0 do  
                 local initial_node = math.random(table.getn(network.nodes))
@@ -125,7 +125,7 @@ function node_network.remove_node(set_name, node_pos, network, network_key, ensu
                 table.insert(set, new_network)
             end
             table.remove(set, network_key)
-            node_network.save_set(set_name, set)
+            node_network.save_set(set_values, set)
         else
             --Reset the bounding box to the whole map so it can be shrunk to the right size in the for loop
             network.min_pos = f_util.map_max_pos
@@ -138,21 +138,21 @@ function node_network.remove_node(set_name, node_pos, network, network_key, ensu
                     network.max_pos = f_util.get_max_pos(network.max_pos, node)
                 end
             end
-            if table.getn(network.nodes) > 0 then node_network.save_network(set_name, network, network_key)
-            else node_network.delete_network(set_name, network_key) end
+            if table.getn(network.nodes) > 0 then node_network.save_network(set_values, network, network_key)
+            else node_network.delete_network(set_values, network_key) end
         end
     end
 end
 
-function node_network.on_node_place(set_name, pos, type)
-    local connected_networks = node_network.get_adjacent_networks(set_name, pos, type)
+function node_network.on_node_place(set_values, pos, type)
+    local connected_networks = node_network.get_adjacent_networks(set_values, pos, type)
     if table.getn(connected_networks) == 0 then
-        node_network.create_network(set_name, pos)
+        node_network.create_network(set_values, pos)
     elseif table.getn(connected_networks) == 1 then
         local network, network_key = connected_networks[1], connected_networks[1].key
         network = node_network.add_node(pos,network)
-        node_network.save_network(set_name, network, network_key)
+        node_network.save_network(set_values, network, network_key)
     else
-        node_network.merge_networks(set_name, connected_networks, pos)
+        node_network.merge_networks(set_values, connected_networks, pos)
     end
 end
