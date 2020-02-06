@@ -1,29 +1,7 @@
 --Network which keeps track of input and output devices.'
 
---Add input
 
---Add output
-
---Remove input
-
---Remove output
-
---Update input/output usage/production
-function io_network.update_input(set_values, pos, production, network)
-	network = network or node_network.get_network(set_values, pos) 
-end
-
---Returns available usage
-function io_network.update_output(set_values, pos, usage, network)
-	network = network or node_network.get_network(set_values, pos)
-end
-
-
-function get_production(set_values, network)
-	return network[set_values.io_name.production] or 0;
-end
-
-function recalculate(set_values, network)
+local function recalculate(set_values, network)
 	local production = 0;
 	local usage = 0;
 	local demand = 0;
@@ -50,4 +28,34 @@ function recalculate(set_values, network)
 	network[set_values.io_name].demand = demand;
 	network[set_values.io_name].usage = usage;
 	network[set_values.io_name].pdRatio = pdRatio;
+end
+
+--Add input
+
+--Add output
+
+--Remove input
+
+--Remove output
+
+--Update input/output usage/production
+function io_network.update_input(set_values, pos, production, network)
+	network = network or node_network.get_network(set_values, pos)
+	for _, node in pairs(network[set_values.io_name].production_nodes) do
+		if(f_util.is_same_pos(node.pos, pos)) then 
+			node.production = production;
+		end;
+	end
+	recalculate(set_values, network);
+end
+
+--Returns available usage
+function io_network.update_output(set_values, pos, demand, network)
+	network = network or node_network.get_network(set_values, pos)
+	for _, node in pairs(network[set_values.io_name].usage_nodes) do
+		if(f_util.is_same_pos(node.pos, pos)) then
+			node.demand = demand;
+		end;
+	end
+	recalculate(set_values, network);
 end
