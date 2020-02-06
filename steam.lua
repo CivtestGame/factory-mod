@@ -69,6 +69,6 @@ function f_steam.get_steam(pos, network)
 	elseif node.name == f_constants.pipe.name then
 		network = network or node_network.get_network("pipe", pos)
 		return network.steam_units or 0
-	else minetest.debug("Get steam called with invalid name(" .. node.name .. ")!")
+	else minetest.debug("Get steam called with invalid node name(" .. node.name .. ")!")
 	end
 end

@@ -45,6 +45,7 @@ end
 
 function node_network.get_network(set_values, pos)
     for key, network in pairs(node_network.get_set(set_values)) do
+        --networkArea is used for quickly reducing the search space.
         local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos})
         if networkArea:containsp(pos) then
             for _,node in pairs(network.nodes) do
