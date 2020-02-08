@@ -33,16 +33,6 @@ simplecrafting_lib.register(
    "smelter",
    {
       input = {
-         ["default:stone_with_iron"] = 1
-      },
-      output = "default:iron_lump 1",
-      cooktime = 30
-})
-
-simplecrafting_lib.register(
-   "smelter",
-   {
-      input = {
          ["default:stone_with_copper"] = 1
       },
       output = "default:copper_lump 1",
@@ -90,17 +80,6 @@ simplecrafting_lib.register(
       cooktime = 30
 })
 
-simplecrafting_lib.register(
-   "smelter",
-   {
-      input = {
-         ["default:iron_lump"] = 1,
-         ["default:obsidian_shard"] = 5
-      },
-      output = "default:iron_ingot 1",
-      cooktime = 20
-})
-
 local smelter_fns = simplecrafting_lib.generate_multifurnace_functions("smelter", "smelter_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -133,7 +112,7 @@ minetest.register_node("factory_mod:smelter", {
 	tiles = {
 		"default_furnace_top.png", "default_furnace_bottom.png",
 		"default_furnace_side.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_front.png"
+		"default_furnace_side.png", "default_smelter_front.png"
 	},
 	paramtype2 = "facedir",
 	groups = {cracky=2},
@@ -160,7 +139,7 @@ minetest.register_node("factory_mod:smelter_active", {
 		"default_furnace_side.png", "default_furnace_side.png",
 		"default_furnace_side.png",
 		{
-			image = "default_furnace_front_active.png",
+			image = "default_smelter_front_active.png",
 			backface_culling = false,
 			animation = {
 				type = "vertical_frames",
@@ -235,38 +214,6 @@ simplecrafting_lib.register(
       cooktime = 10
 })
 
-
-simplecrafting_lib.register(
-   "advanced_smelter",
-   {
-      input = {
-         ["default:iron_lump"] = 1,
-         ["default:quicklime"] = 8
-      },
-      output = "default:steel_ingot 1",
-      cooktime = 25
-})
-
-simplecrafting_lib.register(
-   "advanced_smelter",
-   {
-      input = {
-         ["default:stone_with_gold"] = 1
-      },
-      output = "default:gold_lump 1",
-      cooktime = 10
-})
-
-simplecrafting_lib.register(
-   "advanced_smelter",
-   {
-      input = {
-         ["default:gold_lump"] = 1
-      },
-      output = "default:gold_ingot 1",
-      cooktime = 10
-})
-
 local advanced_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("advanced_smelter", "advanced_smelter_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -283,7 +230,7 @@ minetest.register_node("factory_mod:advanced_smelter", {
 	tiles = {
 		"default_furnace_top.png", "default_furnace_bottom.png",
 		"default_furnace_side.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_front.png"
+		"default_furnace_side.png", "default_advanced_smelter_front.png"
 	},
 	paramtype2 = "facedir",
 	groups = {cracky=2},
@@ -310,7 +257,7 @@ minetest.register_node("factory_mod:advanced_smelter_active", {
 		"default_furnace_side.png", "default_furnace_side.png",
 		"default_furnace_side.png",
 		{
-			image = "default_furnace_front_active.png",
+			image = "default_advanced_smelter_front_active.png",
 			backface_culling = false,
 			animation = {
 				type = "vertical_frames",
@@ -339,6 +286,133 @@ minetest.register_node("factory_mod:advanced_smelter_active", {
         on_receive_fields = advanced_smelter_fns.on_receive_fields,
         on_timer = advanced_smelter_fns.on_timer
 })
+
+--------------------------------------------------------------------------------
+--
+-- Exceptional Smelter
+--
+--------------------------------------------------------------------------------
+
+simplecrafting_lib.register(
+   "exceptional_smelter_fuel",
+   {
+      input = { ["default:coke"] = 1 },
+      burntime = 10,
+   }
+)
+
+simplecrafting_lib.register(
+   "exceptional_smelter_fuel",
+   {
+      input = { ["default:charcoal"] = 1 },
+      burntime = 5,
+   }
+)
+
+simplecrafting_lib.register(
+   "exceptional_smelter",
+   {
+      input = {
+         ["default:iron_lump"] = 1,
+         ["default:quicklime"] = 8
+      },
+      output = "default:steel_ingot 1",
+      cooktime = 25
+})
+
+simplecrafting_lib.register(
+   "exceptional_smelter",
+   {
+      input = {
+         ["default:stone_with_gold"] = 1
+      },
+      output = "default:gold_lump 1",
+      cooktime = 10
+})
+
+simplecrafting_lib.register(
+   "exceptional_smelter",
+   {
+      input = {
+         ["default:gold_lump"] = 1
+      },
+      output = "default:gold_ingot 1",
+      cooktime = 10
+})
+
+local exceptional_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("exceptional_smelter", "exceptional_smelter_fuel", {
+      show_guides = true,
+      alphabetize_items = true,
+      description = "Exceptional Smelter",
+      protect_inventory = true,
+--      crafting_time_multiplier = function(pos, recipe),
+         active_node = "factory_mod:exceptional_smelter_active",
+         lock_in_mode = "endless", -- "count"
+         -- append_to_formspec = "string",
+})
+
+minetest.register_node("factory_mod:exceptional_smelter", {
+	description = "Exceptional Smelter",
+	tiles = {
+		"default_furnace_top.png", "default_furnace_bottom.png",
+		"default_furnace_side.png", "default_furnace_side.png",
+		"default_furnace_side.png", "default_exceptional_smelter_front.png"
+	},
+	paramtype2 = "facedir",
+	groups = {cracky=2},
+	legacy_facedir_simple = true,
+	is_ground_content = false,
+	sounds = default.node_sound_stone_defaults(),
+
+        allow_metadata_inventory_move = exceptional_smelter_fns.allow_metadata_inventory_move,
+        allow_metadata_inventory_put = exceptional_smelter_fns.allow_metadata_inventory_put,
+        allow_metadata_inventory_take = exceptional_smelter_fns.allow_metadata_inventory_take,
+        can_dig = exceptional_smelter_fns.can_dig,
+        on_construct = exceptional_smelter_fns.on_construct,
+        on_metadata_inventory_move = exceptional_smelter_fns.on_metadata_inventory_move,
+        on_metadata_inventory_put = exceptional_smelter_fns.on_metadata_inventory_put,
+        on_metadata_inventory_take = exceptional_smelter_fns.on_metadata_inventory_take,
+        on_receive_fields = exceptional_smelter_fns.on_receive_fields,
+        on_timer = exceptional_smelter_fns.on_timer
+})
+
+minetest.register_node("factory_mod:exceptional_smelter_active", {
+	description = "Exceptional Smelter",
+	tiles = {
+		"default_furnace_top.png", "default_furnace_bottom.png",
+		"default_furnace_side.png", "default_furnace_side.png",
+		"default_furnace_side.png",
+		{
+			image = "default_exceptional_smelter_front_active.png",
+			backface_culling = false,
+			animation = {
+				type = "vertical_frames",
+				aspect_w = 16,
+				aspect_h = 16,
+				length = 1.5
+			},
+		}
+	},
+	paramtype2 = "facedir",
+	light_source = 8,
+	drop = "factory_mod:exceptional_smelter",
+	groups = {cracky=2, not_in_creative_inventory=1},
+	legacy_facedir_simple = true,
+	is_ground_content = false,
+	sounds = default.node_sound_stone_defaults(),
+
+        allow_metadata_inventory_move = exceptional_smelter_fns.allow_metadata_inventory_move,
+        allow_metadata_inventory_put = exceptional_smelter_fns.allow_metadata_inventory_put,
+        allow_metadata_inventory_take = exceptional_smelter_fns.allow_metadata_inventory_take,
+        can_dig = exceptional_smelter_fns.can_dig,
+        on_construct = exceptional_smelter_fns.on_construct,
+        on_metadata_inventory_move = exceptional_smelter_fns.on_metadata_inventory_move,
+        on_metadata_inventory_put = exceptional_smelter_fns.on_metadata_inventory_put,
+        on_metadata_inventory_take = exceptional_smelter_fns.on_metadata_inventory_take,
+        on_receive_fields = exceptional_smelter_fns.on_receive_fields,
+        on_timer = exceptional_smelter_fns.on_timer
+})
+
 
 --------------------------------------------------------------------------------
 --
@@ -505,7 +579,7 @@ minetest.register_node("factory_mod:burner", {
 	tiles = {
 		"default_furnace_top.png", "default_furnace_bottom.png",
 		"default_furnace_side.png", "default_furnace_side.png",
-		"default_furnace_side.png", "default_furnace_front.png"
+		"default_furnace_side.png", "default_burner_front.png"
 	},
 	paramtype2 = "facedir",
 	groups = {cracky=2},
@@ -530,17 +604,17 @@ minetest.register_node("factory_mod:burner_active", {
 	tiles = {
 		"default_furnace_top.png", "default_furnace_bottom.png",
 		"default_furnace_side.png", "default_furnace_side.png",
-		"default_furnace_side.png",
-		{
-			image = "default_furnace_front_active.png",
-			backface_culling = false,
-			animation = {
-				type = "vertical_frames",
-				aspect_w = 16,
-				aspect_h = 16,
-				length = 1.5
-			},
-		}
+		"default_furnace_side.png", "default_burner_front_active.png"
+		-- {
+		-- 	image = "default_furnace_front_active.png",
+		-- 	backface_culling = false,
+		-- 	animation = {
+		-- 		type = "vertical_frames",
+		-- 		aspect_w = 16,
+		-- 		aspect_h = 16,
+		-- 		length = 1.5
+		-- 	},
+		-- }
 	},
 	paramtype2 = "facedir",
 	light_source = 8,
