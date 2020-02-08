@@ -80,6 +80,18 @@ simplecrafting_lib.register(
       cooktime = 30
 })
 
+simplecrafting_lib.register(
+   "smelter",
+   {
+      input = {
+         ["default:bronze_ingot"] = 99,
+         ["default:tin_ingot"] = 99,
+         ["default:copper_ingot"] = 99
+      },
+      output = "factory_mod:advanced_smelter 1",
+      cooktime = 30
+})
+
 local smelter_fns = simplecrafting_lib.generate_multifurnace_functions("smelter", "smelter_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -169,7 +181,6 @@ minetest.register_node("factory_mod:smelter_active", {
         on_timer = smelter_fns.on_timer
 })
 
-
 --------------------------------------------------------------------------------
 --
 -- Advanced Smelter
@@ -212,6 +223,17 @@ simplecrafting_lib.register(
       },
       output = "default:iron_ingot 1",
       cooktime = 10
+})
+
+simplecrafting_lib.register(
+   "advanced_smelter",
+   {
+      input = {
+         ["default:bronze_ingot"] = 297,
+         ["default:iron_ingot"] = 297,
+      },
+      output = "factory_mod:exceptional_smelter 1",
+      cooktime = 30
 })
 
 local advanced_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("advanced_smelter", "advanced_smelter_fuel", {
@@ -563,6 +585,18 @@ simplecrafting_lib.register(
       cooktime = 20
 })
 
+simplecrafting_lib.register(
+   "burner",
+   {
+      input = {
+         ["default:coal_lump"] = 99,
+         ["default:charcoal"] = 99,
+         ["default:coke"] = 99
+      },
+      output = "factory_mod:smelter 1",
+      cooktime = 30
+})
+
 local burner_fns = simplecrafting_lib.generate_multifurnace_functions("burner", "burner_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -634,4 +668,13 @@ minetest.register_node("factory_mod:burner_active", {
         on_metadata_inventory_take = burner_fns.on_metadata_inventory_take,
         on_receive_fields = burner_fns.on_receive_fields,
         on_timer = burner_fns.on_timer
+})
+
+minetest.register_craft({
+	output = 'factory_mod:burner',
+	recipe = {
+		{'group:stone', 'group:stone', 'group:stone'},
+		{'group:stone', 'default:torch', 'group:stone'},
+		{'group:stone', 'group:stone', 'group:stone'},
+	}
 })
