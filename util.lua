@@ -1,5 +1,15 @@
+---@param node_name string
+---@param types string[]
+---@return boolean
+local function same_type(node_name, types)
+    for _, type in pairs(types) do
+        if node_name == type then return true end
+    end
+end
 --Type is an optional filter
-function f_util.get_adjacent_nodes(pos, type)
+---@param pos Position
+---@param type string[]
+function f_util.get_adjacent_nodes(pos, types)
     local return_pos = {}
     local posy = { x = pos.x, y = pos.y + 1, z = pos.z }
     local negy = { x = pos.x, y = pos.y - 1, z = pos.z }
@@ -7,13 +17,13 @@ function f_util.get_adjacent_nodes(pos, type)
     local negx = { x = pos.x - 1, y = pos.y, z = pos.z }
     local posz = { x = pos.x, y = pos.y, z = pos.z + 1}
     local negz = { x = pos.x, y = pos.y, z = pos.z - 1}
-    if type then
-        if minetest.get_node(posy).name == type then table.insert(return_pos, posy) end
-        if minetest.get_node(negy).name == type then table.insert(return_pos, negy) end
-        if minetest.get_node(posx).name == type then table.insert(return_pos, posx) end
-        if minetest.get_node(negx).name == type then table.insert(return_pos, negx) end
-        if minetest.get_node(posz).name == type then table.insert(return_pos, posz) end
-        if minetest.get_node(negz).name == type then table.insert(return_pos, negz) end
+    if types then
+        if same_type(minetest.get_node(posy).name,types) then table.insert(return_pos, posy) end
+        if same_type(minetest.get_node(negy).name,types) then table.insert(return_pos, negy) end
+        if same_type(minetest.get_node(posx).name,types) then table.insert(return_pos, posx) end
+        if same_type(minetest.get_node(negx).name,types) then table.insert(return_pos, negx) end
+        if same_type(minetest.get_node(posz).name,types) then table.insert(return_pos, posz) end
+        if same_type(minetest.get_node(negz).name,types) then table.insert(return_pos, negz) end
     else
         return_pos = {posy,negy,posx,negx,posz,negz}
     end
@@ -24,11 +34,11 @@ f_util.map_max_pos = {x = 30928, y = 30928, z = 30928}
 f_util.map_min_pos = {x = -30928, y = -30928, z = -30928}
 
 function f_util.find_neighbor_pipes(pos)
-    return f_util.get_adjacent_nodes(pos, f_constants.pipe.name)
+    return f_util.get_adjacent_nodes(pos, {f_constants.pipe.name})
 end
 
 function f_util.find_neighbor_boilers(pos)
-    return f_util.get_adjacent_nodes(pos, f_constants.boiler.name)
+    return f_util.get_adjacent_nodes(pos, {f_constants.boiler.name})
 end
 
 function f_util.is_same_pos(pos1, pos2)

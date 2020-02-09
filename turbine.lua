@@ -33,6 +33,7 @@ function turbine.get_reg_values()
             local timer = minetest.get_node_timer(pos)
             timer:start(1.0) -- in seconds
             f_util.debug(node_network.get_network(f_constants.wire.set_values, pos))
+            f_util.debug(node_network.get_network(f_constants.pipe.set_values, pos))
         end,
     }
 end

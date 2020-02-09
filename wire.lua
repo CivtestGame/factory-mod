@@ -1,5 +1,6 @@
-local set_vals = {save_id = "wire", io_name = "Electricity"}
-f_constants.wire = {name = minetest.get_current_modname()..":wire", set_values = set_vals}
+local wire_name = minetest.get_current_modname()..":wire"
+local set_vals = {save_id = "wire", io_name = "Electricity", types = {wire_name, f_constants.turbine.name}}
+f_constants.wire = {name = wire_name, set_values = set_vals}
 
 function wire.get_reg_values()
     return f_constants.wire.name, {

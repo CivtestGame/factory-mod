@@ -1,6 +1,7 @@
+local p_name = minetest.get_current_modname()..":pipe"
 local resource_values = {name = "steam", max_per_node = 10}
-pipe.set_values = {save_id = "pipe", resource = resource_values}
-f_constants.pipe = {name = minetest.get_current_modname()..":pipe", set_values = pipe.set_values}
+pipe.set_values = {save_id = "pipe", resource = resource_values, types = {p_name, turbine.name}}
+f_constants.pipe = {name = p_name, set_values = pipe.set_values}
 
 
 function pipe.get_reg_values()

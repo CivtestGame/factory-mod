@@ -6,6 +6,7 @@ local Position = {} -- This is required to get emmylua to work
 
 ---@class SetValue
 ---@field public save_id string
+---@field public types string[]
 local SetValue = {} -- This is required to get emmylua to work
 
 ---@class Node
@@ -14,6 +15,8 @@ local Node = {} -- This is required to get emmylua to work
 
 ---@class Network
 ---@field public nodes Node[]
+---@field public min_pos Position
+---@field public max_pos Position
 local Network = {} -- This is required to get emmylua to work
 
 ---@param network Network
@@ -26,12 +29,11 @@ local function delete_node(network, pos)
     end 
 end
 
----@param type string
-local function create_new_network(type)
+---@return Network
+local function create_new_network()
     return {
         min_pos = f_util.map_max_pos,
         max_pos = f_util.map_min_pos,
-        type = type,
         nodes = {}}
 end
 
@@ -39,14 +41,15 @@ end
 ---@param network Network
 ---@param old_network Network
 ---@param pos Position
-local function recursive_add(network, old_network, pos)
+---@param types string[]
+local function recursive_add(network, old_network, pos, types)
     for i, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             network.min_pos = f_util.get_min_pos(network.min_pos, pos)
             network.max_pos = f_util.get_max_pos(network.max_pos, pos)
             table.insert(network.nodes, {pos=pos})
             table.remove(old_network.nodes, i)
-            for _, node in pairs(f_util.get_adjacent_nodes(pos, network.type)) do
+            for _, node in pairs(f_util.get_adjacent_nodes(pos, types)) do
                 network, old_network = recursive_add(network, old_network, node)
             end
             return network, old_network
@@ -84,7 +87,7 @@ end
 ---@param node Node
 local function merge_networks(set_values, networks, node)
     local set = get_set(set_values)
-    local new_network = create_new_network(networks[1].type) -- Might want to change this later
+    local new_network = create_new_network() -- Might want to change this later
     for _, network in pairs(networks) do
         for i, node in pairs(network.nodes) do
             new_network = node_network.add_node(node, new_network)
@@ -134,7 +137,7 @@ end
 ---@return Network
 function node_network.create_network(set_values, initial_pos, set)
     set = set or get_set(set_values)
-    local new_network = create_new_network(minetest.get_node(initial_pos).name)
+    local new_network = create_new_network({minetest.get_node(initial_pos).name})
     new_network = node_network.add_node(initial_pos, new_network)
     --update_key_metadata(set_values, new_network) -- Dont need to add pos since there is only 1 node
     table.insert(set, new_network)
@@ -153,7 +156,7 @@ end
 
 ---@param set_values SetValue
 ---@param pos Position
----@param type string | nil
+---@param type string[] | nil
 ---@return Network[]
 --Type is optional filter to reduce search space
 function node_network.get_adjacent_networks(set_values, pos, type)
@@ -221,13 +224,13 @@ end
 function node_network.on_node_destruction(set_values, node_pos, ensure_continuity)
     local network,network_key = node_network.get_network(set_values, node_pos)
     if network ~= nil then
-        if table.getn(f_util.get_adjacent_nodes(node_pos, network.type)) > 1 and ensure_continuity == true then
+        if table.getn(f_util.get_adjacent_nodes(node_pos, set_values.types)) > 1 and ensure_continuity == true then
             local set = get_set(set_values)
             delete_node(network, node_pos)
             while table.getn(network.nodes) > 0 do  
                 local initial_node = math.random(table.getn(network.nodes))
-                local new_network = create_new_network(network.type)
-                new_network, network = recursive_add(new_network, network, network.nodes[initial_node])
+                local new_network = create_new_network()
+                new_network, network = recursive_add(new_network, network, network.nodes[initial_node], set_values.types)
                 table.insert(set, new_network)
             end
             table.remove(set, network_key)
@@ -251,14 +254,12 @@ function node_network.on_node_destruction(set_values, node_pos, ensure_continuit
 end
 
 --Set values is an array of possible networks that the block can connect to
---Type is an optional paramter which only checks neighbour blocks of a certain type
 ---@param set_values SetValue[]
 ---@param pos Position
----@param type string | nil
-function node_network.on_node_place(set_values, pos, type)
+function node_network.on_node_place(set_values, pos)
     for _,set_value in pairs(set_values) do
         f_util.debug(set_value)
-        local connected_networks = node_network.get_adjacent_networks(set_value, pos, type)
+        local connected_networks = node_network.get_adjacent_networks(set_value, pos, set_value.types)
         if table.getn(connected_networks) == 0 then
             node_network.create_network(set_value, pos)
         elseif table.getn(connected_networks) == 1 then
