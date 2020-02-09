@@ -1,6 +1,6 @@
 local resource_values = {name = "steam", max_per_node = 10}
 pipe.set_values = {save_id = "pipe", resource = resource_values}
-f_constants.pipe = {name = minetest.get_current_modname()..":pipe"}
+f_constants.pipe = {name = minetest.get_current_modname()..":pipe", set_values = pipe.set_values}
 
 
 function pipe.get_reg_values()
@@ -9,7 +9,7 @@ function pipe.get_reg_values()
         tiles = {"^[colorize:#3248a8"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            node_network.on_node_place(pipe.set_values, pos, f_constants.pipe.name)
+            node_network.on_node_place({pipe.set_values}, pos)
         end,
         after_destruct = function(pos, old_node)
             node_network.on_node_destruction(pipe.set_values, pos, true)

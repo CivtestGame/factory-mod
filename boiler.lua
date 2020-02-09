@@ -78,7 +78,6 @@ local function boiler_node_timer(pos, elapsed)
 	local steam_per_pipe = f_constants.boiler.max_steam_push*time_elapsed / table.getn(connected_pipes)
 	local transffered = 0
 
-	minetest.debug(f_util.dump(pipe))
 	for i, pipe_pos in pairs(connected_pipes) do
 		local to_transfer = math.min(resource_network.get_capacity_left(pipe.set_values, pipe_pos), steam_per_pipe)
 		local extracted = f_steam.extract_steam(pos, to_transfer)

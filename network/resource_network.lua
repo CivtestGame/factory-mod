@@ -39,8 +39,5 @@ function resource_network.get(set_values, pos, network)
 end
 
 function resource_network.update_infotext(set_values, network)
-    for _, pos in pairs(network.nodes) do
-        local meta = minetest.get_meta(pos)
-        meta:set_string("infotext",  "Contains " .. resource_network.get(set_values, pos, network) .. " units of " .. set_values.resource.name)
-    end
+	node_network.update_infotext(network, "Contains " .. resource_network.get(set_values, nil, network) .. " units of " .. set_values.resource.name)
 end
