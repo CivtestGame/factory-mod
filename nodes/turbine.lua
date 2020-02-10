@@ -1,5 +1,4 @@
-local set_vals = {save_id = "wire", io_name = "Electricity"}
-f_constants.turbine = {name = minetest.get_current_modname()..":turbine", max_steam_pull = 10, watt_per_steam = 200, set_values = set_vals}
+f_constants.turbine = {name = minetest.get_current_modname()..":turbine", max_steam_pull = 10, watt_per_steam = 200}
 
 local function turbine_node_timer(pos, elapsed)
     local connected_pipes = f_util.find_neighbor_pipes(pos)
@@ -12,7 +11,7 @@ local function turbine_node_timer(pos, elapsed)
         end
         local produced_watts = extracted*f_constants.turbine.watt_per_steam
         minetest.chat_send_all("Extracted " .. extracted .. " Units of steam, generated " .. produced_watts .. " Watts")
-        io_network.update_input(f_constants.turbine.set_values, pos, produced_watts)
+        io_network.update_input(f_constants.wire.set_values, pos, produced_watts)
         if extracted > 0 then return true else return false end
     else return false
     end
