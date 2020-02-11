@@ -47,10 +47,10 @@ local function recursive_add(network, old_network, pos, types)
         if f_util.is_same_pos(node.pos, pos) then
             network.min_pos = f_util.get_min_pos(network.min_pos, pos)
             network.max_pos = f_util.get_max_pos(network.max_pos, pos)
-            table.insert(network.nodes, {pos=pos})
+            table.insert(network.nodes, node)
             table.remove(old_network.nodes, i)
-            for _, node in pairs(f_util.get_adjacent_nodes(pos, types)) do
-                network, old_network = recursive_add(network, old_network, node)
+            for _, adj_pos in pairs(f_util.get_adjacent_nodes(pos, types)) do
+                network, old_network = recursive_add(network, old_network, adj_pos, types)
             end
             return network, old_network
         end
@@ -233,7 +233,7 @@ function node_network.on_node_destruction(set_values, node_pos, ensure_continuit
             while table.getn(network.nodes) > 0 do  
                 local initial_node = math.random(table.getn(network.nodes))
                 local new_network = create_new_network()
-                new_network, network = recursive_add(new_network, network, network.nodes[initial_node], set_values.types)
+                new_network, network = recursive_add(new_network, network, network.nodes[initial_node].pos, set_values.types)
                 table.insert(set, new_network)
             end
             table.remove(set, network_key)
