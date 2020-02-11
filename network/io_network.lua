@@ -33,7 +33,7 @@ end
 ---@return Network
 local function setup_network(io_name, network)
 	if not network[io_name] then
-		network[io_name] = { production = 0, demand = 0, usage = 0}
+		network[io_name] = { production = 0, demand = 0, usage = 0, production_nodes = {}, usage_nodes = {}}
 	end
 	return network
 end
@@ -70,4 +70,22 @@ function io_network.update_output(set_values, pos, demand, network)
 	network[set_values.io_name].demand = network[set_values.io_name].demand + diff
 	update_infotext(set_values, network)
 	node_network.save_network(set_values,network)
+end
+
+---@param set_values SetValue
+---@param pos Position
+---@param io_type string
+function io_network.on_node_place(set_values, pos, io_type)
+	--if io_type == "production" then
+	local node = {
+
+		pos = pos
+	}
+		--end
+	local key = node_network.on_node_place(set_values, node)
+end
+
+---@param elapsed number
+function io_network.tick_network(elapsed)
+
 end

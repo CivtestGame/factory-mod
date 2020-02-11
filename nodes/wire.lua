@@ -8,13 +8,13 @@ function wire.get_reg_values()
         tiles = {"^[colorize:#ebe134"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            node_network.on_node_place({f_constants.wire.set_values}, pos)
+            minetest.chat_send_all(node_network.on_node_place({f_constants.wire.set_values}, {pos = pos}))
         end,
         after_destruct = function(pos, old_node)
             node_network.on_node_destruction(f_constants.wire.set_values, pos, true)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.get_network(f_constants.wire.set_values, pos)))
+            minetest.chat_send_all(f_util.dump(node_network.get_network(f_constants.wire.set_values, pos).nodes))
         end
     }
 end

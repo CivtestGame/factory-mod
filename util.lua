@@ -8,7 +8,7 @@ local function same_type(node_name, types)
 end
 --Type is an optional filter
 ---@param pos Position
----@param type string[]
+---@param types string[]
 function f_util.get_adjacent_nodes(pos, types)
     local return_pos = {}
     local posy = { x = pos.x, y = pos.y + 1, z = pos.z }
@@ -30,7 +30,9 @@ function f_util.get_adjacent_nodes(pos, types)
     return return_pos
 end
 
+---@type Position
 f_util.map_max_pos = {x = 30928, y = 30928, z = 30928}
+---@type Position
 f_util.map_min_pos = {x = -30928, y = -30928, z = -30928}
 
 function f_util.find_neighbor_pipes(pos)

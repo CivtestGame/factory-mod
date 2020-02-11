@@ -10,7 +10,7 @@ function pipe.get_reg_values()
         tiles = {"^[colorize:#3248a8"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            node_network.on_node_place({pipe.set_values}, pos)
+            node_network.on_node_place({pipe.set_values}, {pos = pos})
         end,
         after_destruct = function(pos, old_node)
             node_network.on_node_destruction(pipe.set_values, pos, true)

@@ -94,10 +94,12 @@ local function merge_networks(set_values, networks, node)
         end
         node_network.delete_network(set_values, network.key, set)
     end
-    new_network = node_network.add_node(node, new_network)
+    local key
+    new_network,key = node_network.add_node(node, new_network)
     --update_key_metadata(set_values, new_network) 
     table.insert(set, new_network)
     save_set(set_values, set)
+    return key
 end
 
 --Start of global methods
@@ -132,17 +134,18 @@ function node_network.save_network(set_values, network, network_key, set)
 end
 
 ---@param set_values SetValue
----@param initial_pos Position
+---@param initial_node Node
 ---@param set Network[] | nil
----@return Network
-function node_network.create_network(set_values, initial_pos, set)
+---@return Network, number
+function node_network.create_network(set_values, initial_node, set)
     set = set or get_set(set_values)
-    local new_network = create_new_network({minetest.get_node(initial_pos).name})
-    new_network = node_network.add_node(initial_pos, new_network)
+    local new_network = create_new_network()
+    local node_key
+    new_network, node_key = node_network.add_node(initial_node, new_network)
     --update_key_metadata(set_values, new_network) -- Dont need to add pos since there is only 1 node
     table.insert(set, new_network)
     save_set(set_values, set)
-    return new_network
+    return new_network, node_key
 end
 
 ---@param set_values SetValue
@@ -175,14 +178,14 @@ end
 --All netwroks will have to have their network.key set to the correct value
 --node is optional, but usefull. Adds the node after the networks are merged
 
----@param node_pos Position
+---@param node Node
 ---@param network Network
----@return Network
-function node_network.add_node(node_pos, network)
-    network.min_pos = f_util.get_min_pos(network.min_pos, node_pos)
-    network.max_pos = f_util.get_max_pos(network.max_pos, node_pos)
-    table.insert(network.nodes, {pos = node_pos})   
-    return network
+---@return Network, number
+function node_network.add_node(node, network)
+    network.min_pos = f_util.get_min_pos(network.min_pos, node.pos)
+    network.max_pos = f_util.get_max_pos(network.max_pos, node.pos)
+    table.insert(network.nodes, node)
+    return network, table.getn(network.nodes)
 end
 
 ---@param set_value SetValue
@@ -255,20 +258,24 @@ end
 
 --Set values is an array of possible networks that the block can connect to
 ---@param set_values SetValue[]
----@param pos Position
-function node_network.on_node_place(set_values, pos)
+---@param node Node
+---@return number @comment array key of inserted node
+function node_network.on_node_place(set_values, node)
     for _,set_value in pairs(set_values) do
         f_util.debug(set_value)
-        local connected_networks = node_network.get_adjacent_networks(set_value, pos, set_value.types)
+        local connected_networks = node_network.get_adjacent_networks(set_value, node.pos, set_value.types)
         if table.getn(connected_networks) == 0 then
-            node_network.create_network(set_value, pos)
+            local n, key = node_network.create_network(set_value, node)
+            return key
         elseif table.getn(connected_networks) == 1 then
             local network, network_key = connected_networks[1], connected_networks[1].key
-            network = node_network.add_node(pos,network)
+            local node_key
+            network, node_key = node_network.add_node(node,network)
             --update_key_metadata(set_values, network, pos) -- Dont need to add pos since there is only 1 node
             node_network.save_network(set_value, network, network_key)
+            return node_key
         else
-            merge_networks(set_value, connected_networks, pos)
+            return merge_networks(set_value, connected_networks, node)
         end
     end
 end
