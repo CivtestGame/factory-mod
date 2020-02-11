@@ -1,7 +1,5 @@
 local p_name = minetest.get_current_modname()..":pipe"
-local resource_values = {name = "steam", max_per_node = 10}
-pipe.set_values = {save_id = "pipe", resource = resource_values, types = {p_name, f_constants.turbine.name}}
-f_constants.pipe = {name = p_name, set_values = pipe.set_values}
+f_constants.pipe = {name = p_name}
 
 
 function pipe.get_reg_values()
@@ -10,13 +8,13 @@ function pipe.get_reg_values()
         tiles = {"^[colorize:#3248a8"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            node_network.on_node_place({pipe.set_values}, {pos = pos})
+            node_network.on_node_place({f_constants.networks.pipe}, {pos = pos})
         end,
         after_destruct = function(pos, old_node)
-            node_network.on_node_destruction(pipe.set_values, pos, true)
+            node_network.on_node_destruction(f_constants.networks.pipe, pos, true)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.get_network(pipe.set_values, pos).nodes))
+            minetest.chat_send_all(f_util.dump(node_network.get_network(f_constants.networks.pipe, pos).nodes))
         end
     }
 end

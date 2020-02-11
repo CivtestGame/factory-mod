@@ -79,9 +79,9 @@ local function boiler_node_timer(pos, elapsed)
 	local transffered = 0
 
 	for i, pipe_pos in pairs(connected_pipes) do
-		local to_transfer = math.min(resource_network.get_capacity_left(pipe.set_values, pipe_pos), steam_per_pipe)
+		local to_transfer = math.min(resource_network.get_capacity_left(f_constants.networks.pipe, pipe_pos), steam_per_pipe)
 		local extracted = f_steam.extract_steam(pos, to_transfer)
-		resource_network.add(pipe.set_values, pipe_pos, extracted)
+		resource_network.add(f_constants.networks.pipe, pipe_pos, extracted)
 		transffered = transffered + extracted
 	end
 

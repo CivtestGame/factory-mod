@@ -60,7 +60,7 @@ end
 
 ---@param set_values SetValue
 ---@return Network[]
-local function get_set(set_values)
+function node_network.get_set(set_values)
     return minetest.deserialize(factory_mod_storage:get_string(set_values.save_id .. "_network")) or {}
 end
 
@@ -85,8 +85,9 @@ end
 ---@param set_values any
 ---@param networks Network[]
 ---@param node Node
+---@return number
 local function merge_networks(set_values, networks, node)
-    local set = get_set(set_values)
+    local set = node_network.get_set(set_values)
     local new_network = create_new_network() -- Might want to change this later
     for _, network in pairs(networks) do
         for i, node in pairs(network.nodes) do
@@ -108,7 +109,7 @@ end
 ---@param pos Position
 ---@return Network, number
 function node_network.get_network(set_values, pos)
-    for key, network in pairs(get_set(set_values)) do
+    for key, network in pairs(node_network.get_set(set_values)) do
         --networkArea is used for quickly reducing the search space.
         local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos})
         if networkArea:containsp(pos) then
@@ -120,6 +121,7 @@ function node_network.get_network(set_values, pos)
             end
         end
     end
+    return nil, nil
 end
 
 ---@param set_values SetValue
@@ -128,7 +130,7 @@ end
 ---@param set Network[] | nil
 function node_network.save_network(set_values, network, network_key, set)
     network_key = network_key or network.key
-    set = set or get_set(set_values)
+    set = set or node_network.get_set(set_values)
     set[network_key] = network
     save_set(set_values, set)
 end
@@ -138,7 +140,7 @@ end
 ---@param set Network[] | nil
 ---@return Network, number
 function node_network.create_network(set_values, initial_node, set)
-    set = set or get_set(set_values)
+    set = set or node_network.get_set(set_values)
     local new_network = create_new_network()
     local node_key
     new_network, node_key = node_network.add_node(initial_node, new_network)
@@ -152,7 +154,7 @@ end
 ---@param network_key number
 ---@param set Network[] | nil
 function node_network.delete_network(set_values, network_key, set)
-    set = set or get_set(set_values)
+    set = set or node_network.get_set(set_values)
     table.remove(set, network_key)
     save_set(set_values, set)
 end
@@ -193,6 +195,8 @@ end
 ---@param network Network | nil
 ---@return Node, number
 function node_network.get_node(set_value, pos, network)
+    f_util.debug(network)
+    f_util.debug(pos)
     network = network or node_network.get_network(set_value, pos)
 	for key, node in pairs(network.nodes) do
 		if(f_util.is_same_pos(node.pos, pos)) then
@@ -228,7 +232,7 @@ function node_network.on_node_destruction(set_values, node_pos, ensure_continuit
     local network,network_key = node_network.get_network(set_values, node_pos)
     if network ~= nil then
         if table.getn(f_util.get_adjacent_nodes(node_pos, set_values.types)) > 1 and ensure_continuity == true then
-            local set = get_set(set_values)
+            local set = node_network.get_set(set_values)
             delete_node(network, node_pos)
             while table.getn(network.nodes) > 0 do  
                 local initial_node = math.random(table.getn(network.nodes))
@@ -259,23 +263,25 @@ end
 --Set values is an array of possible networks that the block can connect to
 ---@param set_values SetValue[]
 ---@param node Node
----@return number @comment array key of inserted node
+---@return number[] @comment array key of inserted node
 function node_network.on_node_place(set_values, node)
+    local inserted_keys = {}
     for _,set_value in pairs(set_values) do
         f_util.debug(set_value)
         local connected_networks = node_network.get_adjacent_networks(set_value, node.pos, set_value.types)
         if table.getn(connected_networks) == 0 then
             local n, key = node_network.create_network(set_value, node)
-            return key
+            inserted_keys[set_value.save_id] = key
         elseif table.getn(connected_networks) == 1 then
             local network, network_key = connected_networks[1], connected_networks[1].key
             local node_key
             network, node_key = node_network.add_node(node,network)
             --update_key_metadata(set_values, network, pos) -- Dont need to add pos since there is only 1 node
             node_network.save_network(set_value, network, network_key)
-            return node_key
+            inserted_keys[set_value.save_id] = node_key
         else
-            return merge_networks(set_value, connected_networks, node)
+            inserted_keys[set_value.save_id] = merge_networks(set_value, connected_networks, node)
         end
     end
+    return inserted_keys
 end

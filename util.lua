@@ -59,6 +59,10 @@ function f_util.debug(o)
     minetest.debug(f_util.dump(o))
 end
 
+function f_util.cdebug(o)
+    minetest.chat_send_all(f_util.dump(o))
+end
+
 function f_util.dump(o)
     if type(o) == 'table' then
        local s = '{ '

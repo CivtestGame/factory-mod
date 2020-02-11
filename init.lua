@@ -13,7 +13,7 @@ f_constants = {}
 
 factory_mod_storage = minetest.get_mod_storage()
 
-minetest.debug("Initialising factory_mod as " .. minetest.get_current_modname())
+minetest.debug("[Factory mod]Initialising as " .. minetest.get_current_modname())
 
 local modpath = minetest.get_modpath(minetest.get_current_modname())
 
@@ -26,6 +26,7 @@ dofile(modpath .. "/nodes/boiler.lua")
 dofile(modpath .. "/nodes/turbine.lua")
 dofile(modpath .. "/nodes/pipe.lua")
 dofile(modpath .. "/nodes/wire.lua")
+dofile(modpath .. "/init_network_vals.lua")
 dofile(modpath .. "/api.lua")
 dofile(modpath .. "/nodes/smelter.lua")
 

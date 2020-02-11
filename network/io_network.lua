@@ -72,20 +72,62 @@ function io_network.update_output(set_values, pos, demand, network)
 	node_network.save_network(set_values,network)
 end
 
----@param set_values SetValue
----@param pos Position
+---@param set_value SetValue
+---@param node Node
 ---@param io_type string
-function io_network.on_node_place(set_values, pos, io_type)
-	--if io_type == "production" then
-	local node = {
-
-		pos = pos
-	}
-		--end
-	local key = node_network.on_node_place(set_values, node)
+function io_network.on_node_place(set_value, node, io_type)
+	local key = node_network.on_node_place({set_value}, node)[set_value.save_id]
+	local network = node_network.get_network(set_value, node.pos)
+	setup_network(set_value.io_name, network)
+	local node_name = minetest.get_node(node.pos)
+	if io_type == "use" then
+		network[set_value.io_name].usage_nodes[key] = node_name.name
+	elseif io_type == "prod" then
+		network[set_value.io_name].production_nodes[key] = node_name.name
+	end
+	node_network.save_network(set_value, network)
 end
 
+local timer = 0
 ---@param elapsed number
-function io_network.tick_network(elapsed)
-
+function io_network.tick_networks(elapsed)
+	timer = timer + elapsed;
+	if timer >= 1 then
+		for _, set_name in pairs(f_constants.network_updates) do
+			local set_value = f_constants.networks[set_name]
+			for key, network in pairs(node_network.get_set(set_value)) do
+				if network[set_value.io_name] then
+					if network[set_value.io_name].production_nodes then
+						for node_key, node_name in pairs(network[set_value.io_name].production_nodes) do
+							local node = network.nodes[node_key]
+							if set_value.production_functions and set_value.production_functions[node_name] then
+								local production = set_value.production_functions[node_name](node.pos, timer)
+								local diff = production - (node.production or 0)
+								node.production = production
+								network = node_network.set_node(set_value, node, key, network)
+								network = setup_network(set_value.io_name, network) -- Avoids trying to do math on nil values
+								network[set_value.io_name].production = network[set_value.io_name].production + diff
+							end
+						end
+					end
+					if network[set_value.io_name].usage_nodes then
+						for node_key, node_name in pairs(network[set_value.io_name].usage_nodes) do
+							local node = network.nodes[node_key]
+							if set_value.usage_functions and set_value.usage_functions[node_name] then
+								local demand = set_value.usage_functions[node_name](node.pos, timer)
+								local diff = demand - (node.demand or 0)
+								node.demand = demand
+								network = node_network.set_node(set_value, node, key, network)
+								network = setup_network(set_value.io_name, network) -- Avoids trying to do math on nil values
+								network[set_value.io_name].demand = network[set_value.io_name].demand + diff
+							end
+						end
+					end
+					update_infotext(set_value, network)
+					node_network.save_network(set_value,network)
+				end
+			end
+		end
+		timer = 0
+	end
 end
