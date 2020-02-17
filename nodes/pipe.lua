@@ -8,13 +8,13 @@ function pipe.get_reg_values()
         tiles = {"^[colorize:#3248a8"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            node_network.on_node_place({f_constants.networks.pipe}, {pos = pos})
+            Network.on_node_place({f_constants.networks.pipe}, IO_network, {pos = pos})
         end,
         after_destruct = function(pos, old_node)
             node_network.on_node_destruction(f_constants.networks.pipe, pos, true)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.get_network(f_constants.networks.pipe, pos).nodes))
+            f_util.cdebug(IO_network(pos, f_constants.networks.pipe))
         end
     }
 end

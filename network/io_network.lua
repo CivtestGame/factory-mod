@@ -1,75 +1,112 @@
 --Network which keeps track of input and output devices.'
 
-local function recalculate(set_values, network)
-	local production = 0;
-	local usage = 0;
-	local demand = 0;
-	local pdRatio = 1.0; --Production/Demand
-	for _, node in pairs(network.nodes) do
-		production = production + (node.production or 0)
-		demand = demand + (node.demand or 0)
+---@param n IO_network
+---@param pos Position | nil
+---@param set_value SetValue
+local function construct (n, pos, set_value)
+	IO_network._base.init(n, pos, set_value)
+	f_util.cdebug(n.loaded)
+	if not n.loaded then
+		n.production_nodes = {}
+		n.usage_nodes = {}
+		n.production = 0
+		n.demand = 0
+		n.usage = 0
 	end
-	if(demand > production) then
-		pdRatio = production/demand;
-		usage = production;
-		for _, node in pairs(network[set_values.io_name].usage_nodes) do
-			node.usage = node.demand * pdRatio;
-		end
-	else
-		usage = demand;
-		for _, node in pairs(network[set_values.io_name.usage_nodes]) do
-			node.usage = node.demand
-		end
-	end
-	network[set_values.io_name].production = production;
-	network[set_values.io_name].demand = demand;
-	network[set_values.io_name].usage = usage;
-	network[set_values.io_name].pdRatio = pdRatio;
-	minetest.debug(f_util.dump(network))
 end
 
----@param io_name string
----@param network Network
----@return Network
-local function setup_network(io_name, network)
-	if not network[io_name] then
-		network[io_name] = { production = 0, demand = 0, usage = 0, production_nodes = {}, usage_nodes = {}}
-	end
-	return network
+---@class IO_network : Network
+---@field public _base Network
+---@field public production_nodes number[]
+---@field public usage_nodes number[]
+---@field public production number
+---@field public demand number
+---@field public usage number
+IO_network = class(Network,construct)
+
+---@param network IO_network_save
+function IO_network:from_save(network)
+	self._base.from_save(self, network)
+    f_util.cdebug("From save called in IO network")
+	self.production_nodes = network.production_nodes
+	self.usage_nodes = network.usage_nodes
+	self.production = network.production
+	self.demand = network.demand
+	self.usage = network.usage
 end
 
-local function update_infotext(set_values, network)
-	node_network.update_infotext(network, "Production: " .. network[set_values.io_name].production .. " Demand: " .. network[set_values.io_name].demand .. " Usage: " .. network[set_values.io_name].usage)
+function IO_network:to_save()
+	local v = self._base.to_save(self)
+	minetest.chat_send_all("In io")
+    f_util.cdebug(v)
+    f_util.cdebug("To save called in IO network")
+	v.production_nodes = self.production_nodes
+	v.usage_nodes = self.usage_nodes
+	v.production = self.production
+	v.demand = self.demand
+	v.usage = self.usage
+    f_util.cdebug(v)
+	return v
 end
 
---Update input/output usage/production
----@param set_values SetValue
+function IO_network:update_infotext()
+	self._base.update_infotext(self, "Production: " .. self.production .. " Demand: " .. self.demand .. " Usage: " .. self.usage)
+end
+
 ---@param pos Position
 ---@param production number
----@param network Network | nil
-function io_network.update_input(set_values, pos, production, network)
-	network = network or node_network.get_network(set_values, pos)
-	local node, key = node_network.get_node(set_values, pos, network)
+function IO_network:update_input(pos, production)
+	local node, node_key = self:get_node(pos)
 	local diff = production - (node.production or 0)
 	node.production = production
-	network = node_network.set_node(set_values, node, key, network)
-	network = setup_network(set_values.io_name, network) -- Avoids trying to do math on nil values
-	network[set_values.io_name].production = network[set_values.io_name].production + diff
-	update_infotext(set_values, network)
-	node_network.save_network(set_values,network)
+	self:set_node(node, node_key)
+	self.production = self.production + diff
+	--Call a function which checks if we need to update usage nodes
+	self:update_infotext()
 end
 
---Returns available usage
-function io_network.update_output(set_values, pos, demand, network)
-	network = network or node_network.get_network(set_values, pos)
-	local node, key = node_network.get_node(set_values, pos, network)
+---@param pos Position
+---@param demand number
+function IO_network:update_output(pos, demand)
+	local node, node_key = self:get_node(pos)
 	local diff = demand - (node.demand or 0)
 	node.demand = demand
-	network = node_network.set_node(set_values, node, key, network)
-	network = setup_network(set_values.io_name, network) -- Avoids trying to do math on nil values
-	network[set_values.io_name].demand = network[set_values.io_name].demand + diff
-	update_infotext(set_values, network)
-	node_network.save_network(set_values,network)
+	self:set_node(node, node_key)
+	self.demand = self.demand + diff
+	--Call a function which checks if we need to update usage nodes
+	self:update_infotext()
+end
+
+function IO_network:check_burntime(pos, time)
+	minetest.chat_send_all("Burn time called")
+	local node, node_key = self:get_node(pos)
+	if not node.burn_time or time >= node.burn_time then -- There is no burn time left, turn off the boiler
+		minetest.chat_send_all("Burn time is up!")
+		node.burn_time = 0
+		self:update_input(pos, 0)
+		--Call same recalc function
+	end	
+end
+
+---@param set_value SetValue
+---@param network Network
+local function update_usage(set_value, network)
+	if network[set_value.io_name] then
+		local io_values = network[set_value.io_name]
+		local old_pd = io_values.pdRatio
+		io_values.pdRatio = io_values.production / io_values.demand
+		network[set_value.io_name] = io_values
+		node_network.save_network(set_value, network)
+		if old_pd >= 1 and io_values.pdRatio >= 1  then -- We dont need to update usage nodes. There is no change
+		else -- We will need to update usgae nodes
+			for node_key, node_name in pairs(network[set_value.io_name].usage_nodes) do
+				local node = network.nodes[node_key]
+				if set_value.usage_functions and set_value.usage_functions[node_name] then
+					set_value.usage_functions[node_name](node.pos, io_values.pdRatio, network)
+				end
+			end
+		end
+	end
 end
 
 ---@param set_value SetValue
@@ -90,7 +127,7 @@ end
 
 local timer = 0
 ---@param elapsed number
-function io_network.tick_networks(elapsed)
+--[[function io_network.tick_networks(elapsed)
 	timer = timer + elapsed;
 	if timer >= 1 then
 		for _, set_name in pairs(f_constants.network_updates) do
@@ -105,7 +142,6 @@ function io_network.tick_networks(elapsed)
 								local diff = production - (node.production or 0)
 								node.production = production
 								network = node_network.set_node(set_value, node, key, network)
-								network = setup_network(set_value.io_name, network) -- Avoids trying to do math on nil values
 								network[set_value.io_name].production = network[set_value.io_name].production + diff
 							end
 						end
@@ -118,7 +154,6 @@ function io_network.tick_networks(elapsed)
 								local diff = demand - (node.demand or 0)
 								node.demand = demand
 								network = node_network.set_node(set_value, node, key, network)
-								network = setup_network(set_value.io_name, network) -- Avoids trying to do math on nil values
 								network[set_value.io_name].demand = network[set_value.io_name].demand + diff
 							end
 						end
@@ -130,4 +165,4 @@ function io_network.tick_networks(elapsed)
 		end
 		timer = 0
 	end
-end
+end]--]]

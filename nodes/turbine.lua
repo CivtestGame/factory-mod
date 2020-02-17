@@ -26,7 +26,7 @@ function turbine.get_reg_values()
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
             io_network.on_node_place(f_constants.networks.electricity, {pos = pos}, "prod")
-            node_network.on_node_place({f_constants.networks.pipe},{pos = pos})
+            io_network.on_node_place(f_constants.networks.pipe,{pos = pos}, "use")
         end,
         on_destruct = function (pos)
         end,
@@ -35,4 +35,14 @@ function turbine.get_reg_values()
             --f_util.cdebug(node_network.get_network(f_constants.networks.pipe, pos))
         end,
     }
+end
+
+---@param pos Position
+---@param ratio number
+---@param network Network | nil
+function turbine.update(pos, ratio, network)
+    local s_v = f_constants.networks.electricity
+    network = network or node_network.get_network(s_v, pos)
+    minetest.chat_send_all("Called usage for turbine!")
+    f_util.cdebug(network[s_v.io_name].demand)
 end

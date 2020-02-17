@@ -62,6 +62,7 @@ local function boiler_node_timer(pos, elapsed)
 					end
 				end
 				update = true
+				f_util.cdebug(fuel.time)
 				fuel_totaltime = fuel.time + (fuel_totaltime - fuel_time)
 			end
 			fuel_time = 0
@@ -103,6 +104,44 @@ local function boiler_node_timer(pos, elapsed)
 	return result
 end
 
+---@param pos Position
+---@param time number
+local function check_if_fuel_empty(pos, time)
+	local network = node_network.get_network(f_constants.networks.pipe, pos)
+	local node, node_key = node_network.get_node(f_constants.networks.pipe, pos, network)
+	if not node.burn_time or time >= node.burn_time then -- There is no burn time left, turn off the boiler
+		minetest.chat_send_all("Burn time is up!")
+		node.burn_time = 0
+		node_network.set_node(f_constants.networks.pipe, node, node_key, network)
+		node_network.save_network(f_constants.networks.pipe, network)
+		-- Do stuff
+	end
+end
+
+---@param pos Position
+---@param listname string
+---@param index number
+---@param stack any
+---@param player any
+local function consume_fuel(pos, listname, index, stack, player)
+	local meta = minetest.get_meta(pos)
+	local inv = meta:get_inventory()
+	local fuel_stack = inv:get_stack("fuel", 1)
+	local fuel, afterfuel = minetest.get_craft_result({method = "fuel", width = 1, items = {fuel_stack}})
+	local total_time = fuel.time * fuel_stack:get_count() --Total time that the stack can burn for
+	f_util.cdebug(total_time)
+	fuel_stack:clear()
+	inv:set_stack("fuel", 1,fuel_stack)
+	local network = node_network.get_network(f_constants.networks.pipe, pos)
+	local node, node_key = node_network.get_node(f_constants.networks.pipe, pos, network)
+	node.burn_time = total_time + (node.burn_time or 0)
+	node_network.set_node(f_constants.networks.pipe, node, node_key, network)
+	node_network.save_network(f_constants.networks.pipe, network)
+	minetest.after(node.burn_time, io_network.check_burntime, f_constants.networks.pipe, pos, node.burn_time)
+end
+
+
+
 function boiler.update_infotext(meta)
 	meta:set_string("infotext",  "Contains " .. meta:get_float("steam_units") .. " units of steam")
 end
@@ -118,14 +157,14 @@ function boiler.get_reg_values()
             local inv = meta:get_inventory()
             inv:set_size('fuel', 1)
             meta:set_string("formspec", get_formspec(0))
+		end,
+		after_place_node = function(pos, placer, itemstack, pointed_thing)
+			io_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod")
         end,
-        on_metadata_inventory_move = function(pos)
+		on_metadata_inventory_move = function(pos)
             minetest.get_node_timer(pos):start(1.0)
         end,
-        on_metadata_inventory_put = function(pos)
-            -- start timer function, it will sort out whether furnace can burn or not.
-            minetest.get_node_timer(pos):start(1.0)
-        end,
+		on_metadata_inventory_put = consume_fuel,
     }
 end
 
