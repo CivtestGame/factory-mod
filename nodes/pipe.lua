@@ -11,10 +11,10 @@ function pipe.get_reg_values()
             Network.on_node_place({f_constants.networks.pipe}, IO_network, {pos = pos})
         end,
         after_destruct = function(pos, old_node)
-            node_network.on_node_destruction(f_constants.networks.pipe, pos, true)
+            Network.on_node_destruction(pos, true, IO_network, f_constants.networks.pipe)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            f_util.cdebug(IO_network(pos, f_constants.networks.pipe))
+            f_util.cdebug(IO_network(pos, f_constants.networks.pipe).nodes)
         end
     }
 end

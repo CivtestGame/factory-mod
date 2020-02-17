@@ -7,8 +7,7 @@ end
 ---@param save_id string
 ---@param set Network_save[]
 local function save_set(save_id, set)
-    minetest.chat_send_all("Saving this")
-    f_util.cdebug(set)
+    minetest.chat_send_all("Saving")
     factory_mod_storage:set_string(save_id .. "_network", minetest.serialize(set))
 end
 
@@ -18,10 +17,12 @@ end
 ---@param pos Position
 ---@param types string[]
 local function recursive_add(network, old_network, pos, types)
+    minetest.chat_send_all("Recursive")
+    f_util.cdebug(pos)
     for i, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             network:add_node(node)
-            table.remove(old_network.nodes, i)
+            old_network:delete_node(node.pos, i)
             for _, adj_pos in pairs(f_util.get_adjacent_nodes(pos, types)) do
                 network, old_network = recursive_add(network, old_network, adj_pos, types)
             end
@@ -43,10 +44,10 @@ local function merge_networks(networks, extra_node, n_class, set_value)
         for i, node in pairs(network.nodes) do
             new_network:add_node(node)
         end
-        network:delete(set)
+        network:delete()
     end
     local key = new_network:add_node(extra_node)
-    new_network:save(set)
+    new_network:save()
     return key
 end
 
@@ -55,6 +56,7 @@ end
 ---@param pos Position | nil
 ---@param set_value SetValue
 local function construct(n, pos, set_value)
+    minetest.chat_send_all("Pos is")
     f_util.cdebug(pos)
     n.set_value = set_value
     n.loaded = false
@@ -91,7 +93,7 @@ function Network:load(pos)
             end
         end
     end
-    return false
+    return false    
 end
 
 ---@param network Network_save
@@ -102,14 +104,10 @@ function Network:from_save(network)
     self.max_pos = network.max_pos
 end
 
----@param set Network_save[] | nil
-function Network:save(set)
-    set = set or get_set(self.set_value.save_id)
+function Network:save()
+    local set = get_set(self.set_value.save_id)
     if self.key then
-        local save_value = self:to_save()
-        minetest.chat_send_all("Saving this")
-        f_util.cdebug(save_value)
-        set[self.key] = save_value
+        set[self.key] = self:to_save()
     else
         table.insert(set, self:to_save())
     end
@@ -118,20 +116,19 @@ end
 
 ---@return Network_save
 function Network:to_save()
-    f_util.cdebug("To save called in network")
-    f_util.cdebug(self)
+    minetest.chat_send_all("To save called in network")
     local v = {}
     v.nodes = self.nodes
     v.min_pos = self.min_pos
     v.max_pos = self.max_pos
-    f_util.cdebug(v)
     return v
 end
 
----@param set Network_save[] | nil
-function Network:delete(set)
+function Network:delete()
     if self.key then
-        set = set or get_set(self.save_id)
+        minetest.chat_send_all("Trying to delete this key")
+        f_util.cdebug(self.key)
+        local set = get_set(self.set_value.save_id)
         table.remove(set, self.key)
         save_set(self.set_value.save_id, set)
     else
@@ -165,8 +162,10 @@ function Network:set_node(node, key)
 end
 
 ---@param pos Position
-function Network:delete_node(pos)
-    local node, key = self.get_node(pos)
+---@param key number
+function Network:delete_node(pos, key)
+    local node
+    if not key then node, key = self:get_node(pos) end
     table.remove(self.nodes, key)
 end
 
@@ -205,7 +204,6 @@ function Network.on_node_destruction(pos, ensure_continuity, n_class, set_value)
     local network = n_class(pos, set_value)
     if network.loaded then
         if table.getn(f_util.get_adjacent_nodes(pos, set_value.types)) > 1 and ensure_continuity == true then
-            local set = get_set(set_value.save_id)
             network:delete_node(pos)
             while table.getn(network.nodes) > 0 do
                 local initial_node = math.random(table.getn(network.nodes))
@@ -213,7 +211,7 @@ function Network.on_node_destruction(pos, ensure_continuity, n_class, set_value)
                 new_network, network = recursive_add(new_network, network, network.nodes[initial_node].pos, set_value.types)
                 new_network:save()
             end
-            network:delete(set)
+            network:delete()
         else
             --Reset the bounding box to the whole map so it can be shrunk to the right size in the for loop
             network.min_pos = f_util.map_max_pos
@@ -240,15 +238,10 @@ end
 function Network.on_node_place(set_values, n_class, node)
     local inserted_keys = {}
     for _,set_value in pairs(set_values) do
-        f_util.debug(set_value)
         local connected_networks = Network.get_adjacent_networks(node.pos, n_class, set_value)
         if table.getn(connected_networks) == 0 then
             local n = n_class(nil, set_value)
-            minetest.chat_send_all("We are where we expected")
-            f_util.cdebug(n)
             inserted_keys[set_value.save_id] = n:add_node(node)
-            minetest.chat_send_all("after node add")
-            f_util.cdebug(n)
             n:save()
         elseif table.getn(connected_networks) == 1 then
             local network = connected_networks[1]

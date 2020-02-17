@@ -5,8 +5,8 @@
 ---@param set_value SetValue
 local function construct (n, pos, set_value)
 	IO_network._base.init(n, pos, set_value)
-	f_util.cdebug(n.loaded)
 	if not n.loaded then
+		minetest.chat_send_all("Network not loaded")
 		n.production_nodes = {}
 		n.usage_nodes = {}
 		n.production = 0
@@ -37,15 +37,12 @@ end
 
 function IO_network:to_save()
 	local v = self._base.to_save(self)
-	minetest.chat_send_all("In io")
-    f_util.cdebug(v)
     f_util.cdebug("To save called in IO network")
 	v.production_nodes = self.production_nodes
 	v.usage_nodes = self.usage_nodes
 	v.production = self.production
 	v.demand = self.demand
 	v.usage = self.usage
-    f_util.cdebug(v)
 	return v
 end
 
