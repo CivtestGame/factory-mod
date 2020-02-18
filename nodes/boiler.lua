@@ -128,16 +128,23 @@ local function consume_fuel(pos, listname, index, stack, player)
 	local inv = meta:get_inventory()
 	local fuel_stack = inv:get_stack("fuel", 1)
 	local fuel, afterfuel = minetest.get_craft_result({method = "fuel", width = 1, items = {fuel_stack}})
-	local total_time = fuel.time * fuel_stack:get_count() --Total time that the stack can burn for
-	f_util.cdebug(total_time)
-	fuel_stack:clear()
-	inv:set_stack("fuel", 1,fuel_stack)
-	local network = node_network.get_network(f_constants.networks.pipe, pos)
-	local node, node_key = node_network.get_node(f_constants.networks.pipe, pos, network)
-	node.burn_time = total_time + (node.burn_time or 0)
-	node_network.set_node(f_constants.networks.pipe, node, node_key, network)
-	node_network.save_network(f_constants.networks.pipe, network)
-	minetest.after(node.burn_time, io_network.check_burntime, f_constants.networks.pipe, pos, node.burn_time)
+	if fuel.time > 0 then
+		local total_time = fuel.time * fuel_stack:get_count() --Total time that the stack can burn for
+		f_util.cdebug(total_time)
+		fuel_stack:clear()
+		inv:set_stack("fuel", 1,fuel_stack)
+		local network = IO_network(pos, f_constants.networks.pipe)
+		local node, node_key = network:get_node(pos)
+		local previous_value = node.burn_end
+		if not previous_value or previous_value < os.time() then previous_value = os.time() end
+		node.burn_end = total_time + previous_value
+		local diff = node.burn_end - os.time()
+		network:set_node(node, node_key)
+		network:update_input(pos, 10)
+		network:save()
+		f_util.cdebug(diff)
+		minetest.after(diff, network.check_burntime, network, pos, diff)
+	end
 end
 
 
@@ -159,12 +166,15 @@ function boiler.get_reg_values()
             meta:set_string("formspec", get_formspec(0))
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			io_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod")
+			IO_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod")
         end,
 		on_metadata_inventory_move = function(pos)
             minetest.get_node_timer(pos):start(1.0)
         end,
 		on_metadata_inventory_put = consume_fuel,
+        on_rightclick = function(pos, node, player, itemstack, pointed_thing)
+            f_util.cdebug(IO_network(pos, f_constants.networks.pipe):get_node(pos))
+        end
     }
 end
 

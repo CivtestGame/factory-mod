@@ -1,8 +1,8 @@
 f_constants.networks = {
-    electricity = {save_id = "wire", io_name = "Electricity", 
+    electricity = {save_id = "wire", unit_name = "Watt", 
         types = {f_constants.wire.name, f_constants.turbine.name, f_constants.usage.name},
         production_functions = {}, usage_functions = {}},
-    pipe = {save_id = "pipe", io_name = "Steam", 
+    pipe = {save_id = "pipe", unit_name = "Steam", 
         types = {f_constants.boiler.name, f_constants.pipe.name, f_constants.turbine.name},
         production_functions = {}, usage_functions = {}}
 }

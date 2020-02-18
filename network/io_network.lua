@@ -75,12 +75,15 @@ function IO_network:update_output(pos, demand)
 end
 
 function IO_network:check_burntime(pos, time)
-	minetest.chat_send_all("Burn time called")
+	self:load(pos)
+	minetest.chat_send_all("Checking burn time")
 	local node, node_key = self:get_node(pos)
-	if not node.burn_time or time >= node.burn_time then -- There is no burn time left, turn off the boiler
+	if not node.burn_end or os.time() >= node.burn_end then -- There is no burn time left, turn off the boiler
 		minetest.chat_send_all("Burn time is up!")
-		node.burn_time = 0
+		node.burn_end = nil
+		self:set_node(node, node_key)
 		self:update_input(pos, 0)
+		self:save()
 		--Call same recalc function
 	end	
 end
@@ -109,17 +112,18 @@ end
 ---@param set_value SetValue
 ---@param node Node
 ---@param io_type string
-function io_network.on_node_place(set_value, node, io_type)
-	local key = node_network.on_node_place({set_value}, node)[set_value.save_id]
-	local network = node_network.get_network(set_value, node.pos)
-	setup_network(set_value.io_name, network)
-	local node_name = minetest.get_node(node.pos)
+function IO_network.on_node_place(set_value, node, io_type)
+	local key = Network.on_node_place({set_value}, IO_network, node)[set_value.save_id]
+	minetest.chat_send_all("key is")
+	f_util.cdebug(key)
+	local network = IO_network(node.pos, set_value)
+	local node_name = minetest.get_node(node.pos).name
 	if io_type == "use" then
-		network[set_value.io_name].usage_nodes[key] = node_name.name
+		network.usage_nodes[key] = node_name
 	elseif io_type == "prod" then
-		network[set_value.io_name].production_nodes[key] = node_name.name
+		network.production_nodes[key] = node_name
 	end
-	node_network.save_network(set_value, network)
+	network:save()
 end
 
 local timer = 0
