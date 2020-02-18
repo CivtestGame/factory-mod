@@ -2,9 +2,8 @@ f_constants.usage = {name = minetest.get_current_modname()..":usage"}
 
 ---@param node Node
 ---@param network IO_network
-function usage.update(node, network)
-    network:update_usage(node.pos, network.pdRatio*150)
-    network:save()
+function usage.update(node, network, usage)
+    minetest.chat_send_all("Sample usage update called!")
 end
 
 function usage.get_reg_values()   

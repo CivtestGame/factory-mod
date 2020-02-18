@@ -95,7 +95,7 @@ function IO_network:update_demand(pos, demand)
 	self:set_node(node, node_key)
 	self.demand = self.demand + diff
 	self:add_to_usage_nodes(node.pos, node_key)
-	self:update_usage_nodes(node.pos)
+	self:update_usage_nodes(pos)
 	self:update_infotext()
 end
 
@@ -108,7 +108,6 @@ function IO_network:update_usage(pos, usage)
 	self:set_node(node, node_key)
 	self.usage = self.usage + diff
 	self:add_to_usage_nodes(node.pos, node_key)
-	self:update_usage_nodes(node.pos)
 	self:update_infotext()
 end
 
@@ -134,12 +133,11 @@ function IO_network:update_usage_nodes(exclude_pos)
 	else -- We will need to update usgae nodes
 		for node_key, node_name in pairs(self.usage_nodes) do
 			local node = self.nodes[node_key]
-			minetest.chat_send_all("Exclude pos is")
-			f_util.cdebug(exclude_pos)
-			f_util.cdebug(node.pos)
 			if not exclude_pos or not f_util.is_same_pos(exclude_pos, node.pos) then
+				local usage = (node.demand or 0) * self.pdRatio
+				self:update_usage(node.pos, usage)
 				if self.set_value.usage_functions and self.set_value.usage_functions[node_name] then
-					self.set_value.usage_functions[node_name](node, self)
+					self.set_value.usage_functions[node_name](node, self, usage)
 				end
 			end
 		end

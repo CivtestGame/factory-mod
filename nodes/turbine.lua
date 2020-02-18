@@ -1,32 +1,11 @@
 f_constants.turbine = {name = minetest.get_current_modname()..":turbine", max_steam_pull = 10, watt_per_steam = 200}
 
----@param pos Position
----@param elapsed number
----@return number
-function turbine.get_production(pos, elapsed)
-    local connected_pipes = f_util.find_neighbor_pipes(pos)
-
-    if table.getn(connected_pipes) > 0 then
-        local steam_per_pipe = f_constants.turbine.max_steam_pull*elapsed / table.getn(connected_pipes)
-        local extracted = 0
-        for _, pipe in pairs(connected_pipes) do
-            extracted = extracted + resource_network.extract(f_constants.networks.pipe, pipe, steam_per_pipe)
-        end
-        local produced_watts = extracted*f_constants.turbine.watt_per_steam
-        return produced_watts
-    else
-        return 0
-    end
-end
-
 ---@param node Node
 ---@param network IO_network
-function turbine.update(node, network)
-    local steam_usage = math.min(10, 10 * network.pdRatio)
+function turbine.update(node, network, usage)
     minetest.chat_send_all("Turbine update called")
-    network:update_usage(node.pos, steam_usage)
     local n = IO_network(node.pos, f_constants.networks.electricity)
-    n:update_production(node.pos, steam_usage*10)
+    n:update_production(node.pos, usage*10)
     n:save()
 end
 
