@@ -166,10 +166,10 @@ function boiler.get_reg_values()
             meta:set_string("formspec", get_formspec(0))
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			IO_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod")
+			IO_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod", 0)
         end,
 		on_metadata_inventory_move = function(pos)
-            minetest.get_node_timer(pos):start(1.0)
+            --minetest.get_node_timer(pos):start(1.0)
         end,
 		on_metadata_inventory_put = consume_fuel,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)

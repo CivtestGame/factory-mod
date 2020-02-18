@@ -19,30 +19,28 @@ function turbine.get_production(pos, elapsed)
     end
 end
 
+---@param node Node
+---@param network IO_network
+function turbine.update(node, network)
+    local steam_usage = math.min(15, 15 * network.pdRatio)
+    minetest.chat_send_all("Turbine update called")
+    network:update_usage(node.pos, steam_usage)
+end
+
 function turbine.get_reg_values()
     return f_constants.turbine.name, {
         description = "Turbine",
         tiles = {"^[colorize:#48a832"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            io_network.on_node_place(f_constants.networks.electricity, {pos = pos}, "prod")
-            io_network.on_node_place(f_constants.networks.pipe,{pos = pos}, "use")
+            --IO_network.on_node_place(f_constants.networks.electricity, {pos = pos}, "prod")
+            IO_network.on_node_place(f_constants.networks.pipe,{pos = pos}, "use", 15)
         end,
         on_destruct = function (pos)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            f_util.cdebug(node_network.get_network(f_constants.networks.electricity, pos))
-            --f_util.cdebug(node_network.get_network(f_constants.networks.pipe, pos))
+            --f_util.cdebug(node_network.get_network(f_constants.networks.electricity, pos))
+            f_util.cdebug(IO_network(pos, f_constants.networks.pipe):get_node(pos))
         end,
     }
-end
-
----@param pos Position
----@param ratio number
----@param network Network | nil
-function turbine.update(pos, ratio, network)
-    local s_v = f_constants.networks.electricity
-    network = network or node_network.get_network(s_v, pos)
-    minetest.chat_send_all("Called usage for turbine!")
-    f_util.cdebug(network[s_v.io_name].demand)
 end

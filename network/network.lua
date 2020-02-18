@@ -36,21 +36,17 @@ end
 ---@param extra_node Node
 ---@param n_class Network | IO_network
 ---@param set_value SetValue
----@return number, Network
+---@return number
 local function merge_networks(networks, extra_node, n_class, set_value)
-    local set = get_set(set_value.save_id)
     local new_network = n_class(nil, set_value)
     for _, network in pairs(networks) do
-        for i, node in pairs(network.nodes) do
-            new_network:add_node(node)
-        end
+        new_network:merge(network)
         network:delete()
     end
     local key = new_network:add_node(extra_node)
     new_network:save()
     return key
 end
-
 
 ---@param n Network
 ---@param pos Position | nil
@@ -98,7 +94,6 @@ end
 
 ---@param network Network_save
 function Network:from_save(network)
-    f_util.cdebug("From save called in network")
     self.nodes = network.nodes
     self.min_pos = network.min_pos
     self.max_pos = network.max_pos
@@ -110,13 +105,13 @@ function Network:save()
         set[self.key] = self:to_save()
     else
         table.insert(set, self:to_save())
+        self.key = table.getn(set)
     end
     save_set(self.set_value.save_id, set)
 end
 
 ---@return Network_save
 function Network:to_save()
-    minetest.chat_send_all("To save called in network")
     local v = {}
     v.nodes = self.nodes
     v.min_pos = self.min_pos
@@ -177,24 +172,18 @@ function Network:update_infotext(message)
     end
 end
 
---Start of global methods
-
----@param pos Position
----@param set_value SetValue
----@return Network[]
---Type is optional filter to reduce search space
-function Network.get_adjacent_networks(pos, n_class, set_value)
-    local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
-    local networks = {}
-    for _, pos in pairs(connected_nodes) do
-        ---@type Network
-        local n = n_class(pos, set_value)
-        if n.loaded then
-            table.insert(networks, n)
-        end
+function Network:merge(network2)
+    for i, node in pairs(network2.nodes) do
+        self:add_node(node)
     end
-    return networks
 end
+
+--Has no function in the base class, but can be overridden in child classes
+function Network:force_network_recalc()
+end
+
+
+--Start of global methods
 
 ---@param pos Position
 ---@param set_value SetValue
@@ -228,6 +217,27 @@ function Network.on_node_destruction(pos, ensure_continuity, n_class, set_value)
             else network:delete() end
         end
     end
+end
+
+---@param pos Position
+---@param set_value SetValue
+---@return Network[]
+--Type is optional filter to reduce search space
+function Network.get_adjacent_networks(pos, n_class, set_value)
+    local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
+    local networks = {}
+    for _, adj_pos in pairs(connected_nodes) do
+        ---@type Network
+        local n = n_class(adj_pos, set_value)
+        if n.loaded then  
+            local duplicate = false
+            for _, network in pairs(networks) do
+                if(n.key == network.key) then duplicate = true end
+            end
+            if not duplicate then table.insert(networks, n) end
+        end
+    end
+    return networks
 end
 
 --Set values is an array of possible networks that the block can connect to
