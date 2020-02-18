@@ -17,8 +17,6 @@ end
 ---@param pos Position
 ---@param types string[]
 local function recursive_add(network, old_network, pos, types)
-    minetest.chat_send_all("Recursive")
-    f_util.cdebug(pos)
     for i, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             network:add_node(node)
@@ -52,8 +50,6 @@ end
 ---@param pos Position | nil
 ---@param set_value SetValue
 local function construct(n, pos, set_value)
-    minetest.chat_send_all("Pos is")
-    f_util.cdebug(pos)
     n.set_value = set_value
     n.loaded = false
     if pos then n.loaded = n:load(pos) end
@@ -121,8 +117,6 @@ end
 
 function Network:delete()
     if self.key then
-        minetest.chat_send_all("Trying to delete this key")
-        f_util.cdebug(self.key)
         local set = get_set(self.set_value.save_id)
         table.remove(set, self.key)
         save_set(self.set_value.save_id, set)

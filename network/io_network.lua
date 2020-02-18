@@ -75,7 +75,7 @@ end
 
 ---@param pos Position
 ---@param production number
-function IO_network:update_input(pos, production)
+function IO_network:update_production(pos, production)
 	local node, node_key = self:get_node(pos)
 	local diff = production - (node.production or 0)
 	node.production = production
@@ -95,6 +95,7 @@ function IO_network:update_demand(pos, demand)
 	self:set_node(node, node_key)
 	self.demand = self.demand + diff
 	self:add_to_usage_nodes(node.pos, node_key)
+	self:update_usage_nodes(node.pos)
 	self:update_infotext()
 end
 
@@ -107,6 +108,7 @@ function IO_network:update_usage(pos, usage)
 	self:set_node(node, node_key)
 	self.usage = self.usage + diff
 	self:add_to_usage_nodes(node.pos, node_key)
+	self:update_usage_nodes(node.pos)
 	self:update_infotext()
 end
 
@@ -118,21 +120,27 @@ function IO_network:check_burntime(pos, time)
 		minetest.chat_send_all("Burn time is up!")
 		node.burn_end = nil
 		self:set_node(node, node_key)
-		self:update_input(pos, 0)
+		self:update_production(pos, 0)
 		self:save()
 		--Call same recalc function
 	end	
 end
 
-function IO_network:update_usage_nodes()
+---@param exclude_pos Position
+function IO_network:update_usage_nodes(exclude_pos)
 	local old_pd = self.pdRatio or 0
 	self:calc_pdratio()
 	if old_pd >= 1 and self.pdRatio >= 1  then -- We dont need to update usage nodes. There is no change
 	else -- We will need to update usgae nodes
 		for node_key, node_name in pairs(self.usage_nodes) do
 			local node = self.nodes[node_key]
-			if self.set_value.usage_functions and self.set_value.usage_functions[node_name] then
-				self.set_value.usage_functions[node_name](node, self)
+			minetest.chat_send_all("Exclude pos is")
+			f_util.cdebug(exclude_pos)
+			f_util.cdebug(node.pos)
+			if not exclude_pos or not f_util.is_same_pos(exclude_pos, node.pos) then
+				if self.set_value.usage_functions and self.set_value.usage_functions[node_name] then
+					self.set_value.usage_functions[node_name](node, self)
+				end
 			end
 		end
 	end
@@ -172,57 +180,27 @@ end
 ---@param initial_value number
 function IO_network.on_node_place(set_value, node, io_type, initial_value)
 	local key = Network.on_node_place({set_value}, IO_network, node)[set_value.save_id]
-	minetest.chat_send_all("key is")
-	f_util.cdebug(key)
 	local network = IO_network(node.pos, set_value)
 	if io_type == "use" then
 		network:update_demand(node.pos, initial_value)
 	elseif io_type == "prod" then
-		minetest.chat_send_all("We are in prod")
-		network:update_input(node.pos, initial_value)
+		network:update_production(node.pos, initial_value)
 	end
 	network:update_infotext()
 	network:save()
 end
 
-local timer = 0
----@param elapsed number
---[[function io_network.tick_networks(elapsed)
-	timer = timer + elapsed;
-	if timer >= 1 then
-		for _, set_name in pairs(f_constants.network_updates) do
-			local set_value = f_constants.networks[set_name]
-			for key, network in pairs(node_network.get_set(set_value)) do
-				if network[set_value.io_name] then
-					if network[set_value.io_name].production_nodes then
-						for node_key, node_name in pairs(network[set_value.io_name].production_nodes) do
-							local node = network.nodes[node_key]
-							if set_value.production_functions and set_value.production_functions[node_name] then
-								local production = set_value.production_functions[node_name](node.pos, timer)
-								local diff = production - (node.production or 0)
-								node.production = production
-								network = node_network.set_node(set_value, node, key, network)
-								network[set_value.io_name].production = network[set_value.io_name].production + diff
-							end
-						end
-					end
-					if network[set_value.io_name].usage_nodes then
-						for node_key, node_name in pairs(network[set_value.io_name].usage_nodes) do
-							local node = network.nodes[node_key]
-							if set_value.usage_functions and set_value.usage_functions[node_name] then
-								local demand = set_value.usage_functions[node_name](node.pos, timer)
-								local diff = demand - (node.demand or 0)
-								node.demand = demand
-								network = node_network.set_node(set_value, node, key, network)
-								network[set_value.io_name].demand = network[set_value.io_name].demand + diff
-							end
-						end
-					end
-					update_infotext(set_value, network)
-					node_network.save_network(set_value,network)
-				end
-			end
-		end
-		timer = 0
+---@param set_value SetValue
+---@param node Node
+---@param io_type string
+function IO_network.on_node_destruction(set_value, node, io_type, ensure_continuity)
+	local network = IO_network(node.pos, set_value)
+	if io_type == "use" then
+		network:update_demand(node.pos, 0)
+		network:update_usage(node.pos, 0)
+	elseif io_type == "prod" then
+		network:update_production(node.pos, 0)
 	end
-end]--]]
+	network:save()
+	Network.on_node_destruction(node.pos, ensure_continuity, IO_network, set_value)
+end

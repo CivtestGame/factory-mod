@@ -140,7 +140,7 @@ local function consume_fuel(pos, listname, index, stack, player)
 		node.burn_end = total_time + previous_value
 		local diff = node.burn_end - os.time()
 		network:set_node(node, node_key)
-		network:update_input(pos, 10)
+		network:update_production(pos, 10)
 		network:save()
 		f_util.cdebug(diff)
 		minetest.after(diff, network.check_burntime, network, pos, diff)
@@ -167,7 +167,10 @@ function boiler.get_reg_values()
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
 			IO_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod", 0)
-        end,
+		end,
+        on_destruct = function (pos)
+			IO_network.on_node_destruction(f_constants.networks.pipe, {pos = pos}, "prod", true)
+		end,		
 		on_metadata_inventory_move = function(pos)
             --minetest.get_node_timer(pos):start(1.0)
         end,

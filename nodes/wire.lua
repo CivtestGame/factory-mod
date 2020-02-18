@@ -7,13 +7,16 @@ function wire.get_reg_values()
         tiles = {"^[colorize:#ebe134"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.on_node_place({f_constants.networks.electricity}, {pos = pos})))
+            Network.on_node_place({f_constants.networks.electricity}, IO_network, {pos = pos})
         end,
         after_destruct = function(pos, old_node)
-            node_network.on_node_destruction(f_constants.networks.electricity, pos, true)
+            Network.on_node_destruction(pos, true, IO_network, f_constants.networks.electricity)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            minetest.chat_send_all(f_util.dump(node_network.get_network(f_constants.networks.electricity, pos).nodes))
+            local n = IO_network(pos, f_constants.networks.electricity)
+            n:update_infotext()
+            f_util.cdebug(n)
+            f_util.cdebug(n.nodes)
         end
     }
 end
