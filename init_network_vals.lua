@@ -8,4 +8,3 @@ f_constants.networks = {
 }
 f_constants.networks.electricity.usage_functions[f_constants.usage.name] = usage.update
 f_constants.networks.pipe.usage_functions[f_constants.turbine.name] = turbine.update
-f_constants.network_updates = {"electricity"}

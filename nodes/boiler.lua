@@ -12,112 +12,6 @@ local function get_formspec(burn_pct)
     return table.concat(formspec, "")
 end
 
-local function boiler_node_timer(pos, elapsed)
-	--
-	-- Initialize metadata
-	--
-	local time_elapsed = elapsed
-	local meta = minetest.get_meta(pos)
-	local fuel_time = meta:get_float("fuel_time") or 0
-	local fuel_totaltime = meta:get_float("fuel_totaltime") or 0
-
-	local inv = meta:get_inventory()
-
-	local fuel
-
-	local update = true
-
-	while elapsed > 0 and update do
-		update = false
-
-		local el = math.min(elapsed, fuel_totaltime - fuel_time)
-
-		-- Check if we have enough fuel to burn
-		if fuel_time < fuel_totaltime then
-			-- The furnace is currently active and has enough fuel
-			fuel_time = fuel_time + el
-			-- If there is a cookable item then check if it is ready yet
-			--Produce steam here
-			f_steam.add_steam(pos,el*f_constants.boiler.steam_produced_per_second)
-		else
-			-- boiler ran out of fuel
-			-- We need to get new fuel
-			local afterfuel
-			fuel, afterfuel = minetest.get_craft_result({method = "fuel", width = 1, items = inv:get_list("fuel")})
-
-            if fuel.time == 0 then
-				-- No valid fuel in fuel list
-				fuel_totaltime = 0
-			else
-				-- Take fuel from fuel list
-				inv:set_stack("fuel", 1, afterfuel.items[1])
-				-- Put replacements in dst list or drop them on the furnace.
-				local replacements = fuel.replacements
-				if replacements[1] then
-					local leftover = inv:add_item("dst", replacements[1])
-					if not leftover:is_empty() then
-						local above = vector.new(pos.x, pos.y + 1, pos.z)
-						local drop_pos = minetest.find_node_near(above, 1, {"air"}) or above
-						minetest.item_drop(replacements[1], nil, drop_pos)
-					end
-				end
-				update = true
-				f_util.cdebug(fuel.time)
-				fuel_totaltime = fuel.time + (fuel_totaltime - fuel_time)
-			end
-			fuel_time = 0
-		end
-
-		elapsed = elapsed - el
-	end
-
-	if fuel and fuel_totaltime > fuel.time then
-		fuel_totaltime = fuel.time
-	end
-	
-	local connected_pipes = f_util.find_neighbor_pipes(pos)
-	local steam_per_pipe = f_constants.boiler.max_steam_push*time_elapsed / table.getn(connected_pipes)
-	local transffered = 0
-
-	for i, pipe_pos in pairs(connected_pipes) do
-		local to_transfer = math.min(resource_network.get_capacity_left(f_constants.networks.pipe, pipe_pos), steam_per_pipe)
-		local extracted = f_steam.extract_steam(pos, to_transfer)
-		resource_network.add(f_constants.networks.pipe, pipe_pos, extracted)
-		transffered = transffered + extracted
-	end
-
-    local result = false
-
-    if fuel_totaltime ~= 0 then
-		-- make sure timer restarts automatically
-		result = true
-        local pct_fuel_left = 100 - math.floor(fuel_time / fuel_totaltime * 100)
-        meta:set_string("formspec", get_formspec(pct_fuel_left))
-	else
-        minetest.get_node_timer(pos):stop()
-        meta:set_string("formspec", get_formspec(0))
-	end
-
-	meta:set_float("fuel_totaltime", fuel_totaltime)
-    meta:set_float("fuel_time", fuel_time)
-
-	return result
-end
-
----@param pos Position
----@param time number
-local function check_if_fuel_empty(pos, time)
-	local network = node_network.get_network(f_constants.networks.pipe, pos)
-	local node, node_key = node_network.get_node(f_constants.networks.pipe, pos, network)
-	if not node.burn_time or time >= node.burn_time then -- There is no burn time left, turn off the boiler
-		minetest.chat_send_all("Burn time is up!")
-		node.burn_time = 0
-		node_network.set_node(f_constants.networks.pipe, node, node_key, network)
-		node_network.save_network(f_constants.networks.pipe, network)
-		-- Do stuff
-	end
-end
-
 ---@param pos Position
 ---@param listname string
 ---@param index number
@@ -170,14 +64,11 @@ function boiler.get_reg_values()
 		end,
         on_destruct = function (pos)
 			IO_network.on_node_destruction(f_constants.networks.pipe, {pos = pos}, "prod", true)
-		end,		
-		on_metadata_inventory_move = function(pos)
-            --minetest.get_node_timer(pos):start(1.0)
-        end,
-		on_metadata_inventory_put = consume_fuel,
+		end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
             f_util.cdebug(IO_network(pos, f_constants.networks.pipe):get_node(pos))
-        end
+        end,
+		on_metadata_inventory_put = consume_fuel
     }
 end
 
