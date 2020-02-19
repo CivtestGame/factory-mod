@@ -1,5 +1,4 @@
 local name = minetest.get_current_modname() .. ":usage"
-f_constants.usage = {name = name}
 
 ---@param node Node
 ---@param network IO_network
@@ -9,8 +8,8 @@ end
 
 IO_network.register_usage_node("electricity", name, update)
 
-function usage.get_reg_values()   
-    return f_constants.usage.name, {
+function f_nodes.usage()   
+    return name, {
         description = "Usage",
         tiles = {"^[colorize:#000000"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},

@@ -1,10 +1,9 @@
 local wire_name = minetest.get_current_modname()..":wire"
-f_constants.wire = {name = wire_name}
 
 Network.register_node("electricity", wire_name)
 
-function wire.get_reg_values()
-    return f_constants.wire.name, {
+function f_nodes.wire()
+    return wire_name, {
         description = "Wire",
         tiles = {"^[colorize:#ebe134"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},

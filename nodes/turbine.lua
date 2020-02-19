@@ -1,5 +1,4 @@
 local name = minetest.get_current_modname()..":turbine"
-f_constants.turbine = {name = name, max_steam_pull = 10, watt_per_steam = 200}
 
 ---@param node Node
 ---@param network IO_network
@@ -13,8 +12,8 @@ end
 IO_network.register_usage_node("steam", name, update)
 IO_network.register_production_node("electricity", name)
 
-function turbine.get_reg_values()
-    return f_constants.turbine.name, {
+function f_nodes.turbine()
+    return name, {
         description = "Turbine",
         tiles = {"^[colorize:#48a832"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},

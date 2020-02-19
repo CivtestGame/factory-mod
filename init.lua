@@ -1,16 +1,7 @@
 fm = {}
 
 f_util = {}
-node_network = {}
-resource_network = {}
-io_network = {}
-f_steam = {}
-boiler = {}
-pipe = {}
-turbine = {}
-wire = {}
-usage = {}
-f_constants = {}
+f_nodes = {}
 
 factory_mod_storage = minetest.get_mod_storage()
 

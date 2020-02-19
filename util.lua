@@ -35,14 +35,6 @@ f_util.map_max_pos = {x = 30928, y = 30928, z = 30928}
 ---@type Position
 f_util.map_min_pos = {x = -30928, y = -30928, z = -30928}
 
-function f_util.find_neighbor_pipes(pos)
-    return f_util.get_adjacent_nodes(pos, {f_constants.pipe.name})
-end
-
-function f_util.find_neighbor_boilers(pos)
-    return f_util.get_adjacent_nodes(pos, {f_constants.boiler.name})
-end
-
 function f_util.is_same_pos(pos1, pos2)
     return pos1.x == pos2.x and pos1.y == pos2.y and pos1.z == pos2.z
 end

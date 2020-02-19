@@ -1,5 +1,4 @@
 local name = minetest.get_current_modname()..":boiler"
-f_constants.boiler = {name = name, max_steam = 500, max_steam_push = 10, steam_produced_per_second = 5}
 
 local function get_formspec(burn_pct)
     local formspec = {
@@ -44,8 +43,8 @@ end
 
 IO_network.register_production_node("steam", name)
 
-function boiler.get_reg_values()   
-    return f_constants.boiler.name, {
+function f_nodes.boiler()   
+    return name, {
         description = "Boiler",
         tiles = {"^[colorize:#a83232"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
