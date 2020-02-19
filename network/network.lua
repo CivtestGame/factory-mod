@@ -33,10 +33,10 @@ end
 ---@param networks Network[]
 ---@param extra_node Node
 ---@param n_class Network | IO_network
----@param set_value SetValue
+---@param save_id string
 ---@return number
-local function merge_networks(networks, extra_node, n_class, set_value)
-    local new_network = n_class(nil, set_value)
+local function merge_networks(networks, extra_node, n_class, save_id)
+    local new_network = n_class(nil, save_id)
     for _, network in pairs(networks) do
         new_network:merge(network)
         network:delete()
@@ -48,9 +48,9 @@ end
 
 ---@param n Network
 ---@param pos Position | nil
----@param set_value SetValue
-local function construct(n, pos, set_value)
-    n.set_value = set_value
+---@param save_id string
+local function construct(n, pos, save_id)
+    n.set_value = Network.set_values[save_id]
     n.loaded = false
     if pos then n.loaded = n:load(pos) end
     if not n.loaded then
@@ -179,18 +179,20 @@ end
 
 --Start of global methods
 
+---@param save_id string
 ---@param pos Position
----@param set_value SetValue
 ---@param ensure_continuity boolean
-function Network.on_node_destruction(pos, ensure_continuity, n_class, set_value)
+---@param n_class Network
+function Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
     ---@type Network
-    local network = n_class(pos, set_value)
+    local set_value = Network.set_values[save_id]
+    local network = n_class(pos, save_id)
     if network.loaded then
         if table.getn(f_util.get_adjacent_nodes(pos, set_value.types)) > 1 and ensure_continuity == true then
             network:delete_node(pos)
             while table.getn(network.nodes) > 0 do
                 local initial_node = math.random(table.getn(network.nodes))
-                local new_network = n_class(nil, set_value)
+                local new_network = n_class(nil, save_id)
                 new_network, network = recursive_add(new_network, network, network.nodes[initial_node].pos, set_value.types)
                 new_network:save()
             end
@@ -214,15 +216,15 @@ function Network.on_node_destruction(pos, ensure_continuity, n_class, set_value)
 end
 
 ---@param pos Position
----@param set_value SetValue
+---@param save_id string
 ---@return Network[]
 --Type is optional filter to reduce search space
-function Network.get_adjacent_networks(pos, n_class, set_value)
-    local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
+function Network.get_adjacent_networks(pos, n_class, save_id)
+    local connected_nodes = f_util.get_adjacent_nodes(pos, Network.set_values[save_id].types)
     local networks = {}
     for _, adj_pos in pairs(connected_nodes) do
         ---@type Network
-        local n = n_class(adj_pos, set_value)
+        local n = n_class(adj_pos, save_id)
         if n.loaded then  
             local duplicate = false
             for _, network in pairs(networks) do
@@ -235,25 +237,39 @@ function Network.get_adjacent_networks(pos, n_class, set_value)
 end
 
 --Set values is an array of possible networks that the block can connect to
----@param set_values SetValue[]
+---@param save_ids string[]
 ---@param n_class Network
 ---@param node Node
 ---@return number[] @comment array key of inserted node
-function Network.on_node_place(set_values, n_class, node)
+function Network.on_node_place(save_ids, n_class, node)
     local inserted_keys = {}
-    for _,set_value in pairs(set_values) do
-        local connected_networks = Network.get_adjacent_networks(node.pos, n_class, set_value)
+    for _,save_id in pairs(save_ids) do
+        f_util.debug(save_ids)
+        local set_value = Network.set_values[save_id]
+        local connected_networks = Network.get_adjacent_networks(node.pos, n_class, save_id)
         if table.getn(connected_networks) == 0 then
-            local n = n_class(nil, set_value)
-            inserted_keys[set_value.save_id] = n:add_node(node)
+            local n = n_class(nil, save_id)
+            inserted_keys[save_id] = n:add_node(node)
             n:save()
         elseif table.getn(connected_networks) == 1 then
             local network = connected_networks[1]
-            inserted_keys[set_value.save_id] = network:add_node(node)
+            inserted_keys[save_id] = network:add_node(node)
             network:save()
         else
-            inserted_keys[set_value.save_id] = merge_networks(connected_networks, node, n_class, set_value)
+            inserted_keys[save_id] = merge_networks(connected_networks, node, n_class, save_id)
         end
     end
     return inserted_keys
+end
+
+Network.set_values = {}
+
+---@param save_id string
+---@param unit_name string| nil
+function Network.register_network(save_id, unit_name)
+    Network.set_values[save_id] = {save_id = save_id, unit_name = unit_name, types = {}, usage_functions = {}}
+end
+
+function Network.register_node(save_id, block_name)
+    table.insert(Network.set_values[save_id].types,  block_name)
 end

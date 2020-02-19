@@ -1,4 +1,5 @@
-f_constants.boiler = {name = minetest.get_current_modname()..":boiler", max_steam = 500, max_steam_push = 10, steam_produced_per_second = 5}
+local name = minetest.get_current_modname()..":boiler"
+f_constants.boiler = {name = name, max_steam = 500, max_steam_push = 10, steam_produced_per_second = 5}
 
 local function get_formspec(burn_pct)
     local formspec = {
@@ -27,7 +28,7 @@ local function consume_fuel(pos, listname, index, stack, player)
 		f_util.cdebug(total_time)
 		fuel_stack:clear()
 		inv:set_stack("fuel", 1,fuel_stack)
-		local network = IO_network(pos, f_constants.networks.pipe)
+		local network = IO_network(pos, "steam")
 		local node, node_key = network:get_node(pos)
 		local previous_value = node.burn_end
 		if not previous_value or previous_value < os.time() then previous_value = os.time() end
@@ -41,17 +42,12 @@ local function consume_fuel(pos, listname, index, stack, player)
 	end
 end
 
-
-
-function boiler.update_infotext(meta)
-	meta:set_string("infotext",  "Contains " .. meta:get_float("steam_units") .. " units of steam")
-end
+IO_network.register_production_node("steam", name)
 
 function boiler.get_reg_values()   
     return f_constants.boiler.name, {
         description = "Boiler",
         tiles = {"^[colorize:#a83232"},
-        on_timer = boiler_node_timer,
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         on_construct = function(pos)
             local meta = minetest.get_meta(pos)
@@ -60,13 +56,13 @@ function boiler.get_reg_values()
             meta:set_string("formspec", get_formspec(0))
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			IO_network.on_node_place(f_constants.networks.pipe, {pos = pos}, "prod", 0)
+			IO_network.on_node_place("steam", {pos = pos}, "prod", 0)
 		end,
         on_destruct = function (pos)
-			IO_network.on_node_destruction(f_constants.networks.pipe, {pos = pos}, "prod", true)
+			IO_network.on_node_destruction("steam", {pos = pos}, "prod", true)
 		end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            f_util.cdebug(IO_network(pos, f_constants.networks.pipe):get_node(pos))
+            f_util.cdebug(IO_network(pos, "steam"):get_node(pos))
         end,
 		on_metadata_inventory_put = consume_fuel
     }

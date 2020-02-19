@@ -2,9 +2,9 @@
 
 ---@param n IO_network
 ---@param pos Position | nil
----@param set_value SetValue
-local function construct (n, pos, set_value)
-	IO_network._base.init(n, pos, set_value)
+---@param save_id string
+local function construct (n, pos, save_id)
+	IO_network._base.init(n, pos, save_id)
 	if not n.loaded then
 		minetest.chat_send_all("Network not loaded")
 		n.production_nodes = {}
@@ -172,13 +172,14 @@ function IO_network:force_network_recalc()
 	end
 end
 
----@param set_value SetValue
+---@param save_id string
 ---@param node Node
 ---@param io_type string
 ---@param initial_value number
-function IO_network.on_node_place(set_value, node, io_type, initial_value)
-	local key = Network.on_node_place({set_value}, IO_network, node)[set_value.save_id]
-	local network = IO_network(node.pos, set_value)
+function IO_network.on_node_place(save_id, node, io_type, initial_value)
+	local set_value = Network.set_values[save_id]
+	local key = Network.on_node_place({save_id}, IO_network, node)[save_id]
+	local network = IO_network(node.pos, save_id)
 	if io_type == "use" then
 		network:update_demand(node.pos, initial_value)
 	elseif io_type == "prod" then
@@ -188,11 +189,12 @@ function IO_network.on_node_place(set_value, node, io_type, initial_value)
 	network:save()
 end
 
----@param set_value SetValue
+---@param save_id string
 ---@param node Node
 ---@param io_type string
-function IO_network.on_node_destruction(set_value, node, io_type, ensure_continuity)
-	local network = IO_network(node.pos, set_value)
+function IO_network.on_node_destruction(save_id, node, io_type, ensure_continuity)
+	local set_value = Network.set_values[save_id]
+	local network = IO_network(node.pos, save_id)
 	if io_type == "use" then
 		network:update_demand(node.pos, 0)
 		network:update_usage(node.pos, 0)
@@ -200,5 +202,19 @@ function IO_network.on_node_destruction(set_value, node, io_type, ensure_continu
 		network:update_production(node.pos, 0)
 	end
 	network:save()
-	Network.on_node_destruction(node.pos, ensure_continuity, IO_network, set_value)
+	Network.on_node_destruction(node.pos, ensure_continuity, IO_network, save_id)
+end
+
+---@param save_id string
+---@param block_name string
+---@param usage_function function
+function IO_network.register_usage_node(save_id, block_name, usage_function)
+	Network.register_node(save_id, block_name)
+	Network.set_values[save_id].usage_functions[block_name] = usage_function
+end
+
+---@param save_id string
+---@param block_name string
+function IO_network.register_production_node(save_id, block_name)
+	Network.register_node(save_id, block_name)
 end
