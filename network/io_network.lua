@@ -94,17 +94,19 @@ end
 function IO_network:delete_node(pos)
 	minetest.chat_send_all("IO delete node called. pos:" .. f_util.dump(pos) .. " key: " .. tostring(self.key) .. " save_id " .. tostring(self.set_value.save_id))
 	local node = self._base.delete_node(self,pos)
-	local update_needed = false
-	if node.production and node.production > 0 then
-		self.production = self.production - node.production
-		update_needed = true
-	end
-	if node.demand and node.demand > 0 then
-		self.demand = self.demand - node.demand
-		update_needed = true
-	end
-	if update_needed then
-		self:update_usage_nodes()
+	if node then -- If we get retuned a node, it means the network wasen't deleted
+		local update_needed = false
+		if node.production and node.production > 0 then
+			self.production = self.production - node.production
+			update_needed = true
+		end
+		if node.demand and node.demand > 0 then
+			self.demand = self.demand - node.demand
+			update_needed = true
+		end
+		if update_needed then
+			self:update_usage_nodes()
+		end
 	end
 end
 

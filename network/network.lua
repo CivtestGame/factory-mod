@@ -10,6 +10,38 @@ local function save_set(save_id, set)
     factory_mod_storage:set_string(save_id .. "_network", minetest.serialize(set))
 end
 
+ -- Don't know if this is actually random, but it's semi-random and will do for it's one usecase
+local function get_random_node(nodes)    
+    local f,t,key = pairs(nodes)
+    local node
+    key,node = f(t, key)
+    return node,key
+end
+
+---@param pos Position
+---@return string
+local function to_node_id(pos)
+    return pos.x .. ";" .. pos.y .. ";" .. pos.z
+end
+
+local function split (inputstr, sep)
+    if sep == nil then
+            sep = "%s"
+    end
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+            table.insert(t, str)
+    end
+    return t
+end
+
+---@param string string
+---@return Position
+local function from_node_id(string)
+    local p = split(string, ";")
+    return {x = p[1], y = p[2], z=p[3]}
+end
+
 --Recursive function to hopefully generate a new network in cases of network splits
 ---@param network Network
 ---@param old_network Network
@@ -20,7 +52,7 @@ local function recursive_add(network, old_network, pos, types)
     for key, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             network:add_node(node)
-            table.remove(old_network.nodes, key) -- We dont use delete node here since we won't use the old network for anything
+            old_network.nodes[key] = nil -- We dont use delete node here since we won't use the old network for anything
             for _, adj_pos in pairs(f_util.get_adjacent_nodes(pos, types)) do
                 network, old_network = recursive_add(network, old_network, adj_pos, types)
             end
@@ -55,6 +87,7 @@ local function construct(n, pos, save_id)
     n.loaded = false
     if pos then n.loaded = n:load(pos) end
     if not n.loaded then
+        minetest.chat_send_all("Network not found. Creating new")
         n.min_pos = f_util.map_max_pos
         n.max_pos = f_util.map_min_pos
         n.nodes = {}
@@ -75,18 +108,17 @@ Network = class(construct)
 function Network:load(pos)
     for key, network in pairs(get_set(self.set_value.save_id)) do
         --networkArea is used for quickly reducing the search space.
-        local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos})
+        local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos}) -- This might be redundant now
         if networkArea:containsp(pos) then
-            for _,node in pairs(network.nodes) do
-                if f_util.is_same_pos(node.pos,pos) then
-                    self.key = key
-                    self:from_save(network)
-                    return true
-                end
+            local node_key = to_node_id(pos)
+            if network.nodes[node_key] then
+                self.key = key
+                self:from_save(network)
+                return true
             end
         end
     end
-    return false    
+    return false
 end
 
 ---@param network Network_save
@@ -98,12 +130,10 @@ end
 
 function Network:save()
     local set = get_set(self.set_value.save_id)
-    if self.key then
-        set[self.key] = self:to_save()
-    else
-        self.key = table.getn(set)+1
-        table.insert(set, self:to_save())
+    if not self.key then
+        self.key = Network.generate_id(self.set_value.save_id)
     end
+    set[self.key] = self:to_save()
     minetest.chat_send_all("Saving this key " .. self.key .. " for this save_id " .. self.set_value.save_id)
     f_util.cdebug(self.nodes)
     save_set(self.set_value.save_id, set)
@@ -122,7 +152,7 @@ function Network:delete()
     minetest.chat_send_all("Deleting key ".. tostring(self.key))
     if self.key then
         local set = get_set(self.set_value.save_id)
-        table.remove(set, self.key)
+        set[self.key] = nil
         save_set(self.set_value.save_id, set)
     else
         minetest.debug("[Factorymod]Soft Error: Tried to delete a network which isn't saved")
@@ -133,11 +163,8 @@ end
 ---@param pos Position
 ---@return Node, number
 function Network:get_node(pos)
-	for key, node in pairs(self.nodes) do
-		if(f_util.is_same_pos(node.pos, pos)) then
-			return node, key
-		end
-	end
+    local key = to_node_id(pos)
+	return self.nodes[key], key
 end
 
 ---@param node Node
@@ -145,8 +172,9 @@ end
 function Network:add_node(node)
     self.min_pos = f_util.get_min_pos(self.min_pos, node.pos)
     self.max_pos = f_util.get_max_pos(self.max_pos, node.pos)
-    table.insert(self.nodes, node)
-    return table.getn(self.nodes)
+    local key = to_node_id(node.pos)
+    self.nodes[key] = node
+    return key
 end
 
 ---@param node Node
@@ -165,16 +193,22 @@ function Network:delete_node(pos)
     for key,node in pairs(self.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             rnode = node
-            table.remove(self.nodes, key)
+            self.nodes[key] = nil
         else
             self.min_pos = f_util.get_min_pos(self.min_pos, node.pos)
             self.max_pos = f_util.get_max_pos(self.max_pos, node.pos)
         end
     end
-    if table.getn(self.nodes) > 0 then
+    if self:get_nodes_amount() > 0 then
         self:save()
         return rnode
     else self:delete() end
+end
+
+function Network:get_nodes_amount()
+    local count = 0
+    for _ in pairs(self.nodes) do count = count + 1 end
+    return count
 end
 
 ---@param message string
@@ -225,14 +259,14 @@ function Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
             minetest.chat_send_all("2")
             local node, key = network:get_node(pos)
             minetest.chat_send_all("3")
-            table.remove(network.nodes, key) -- We dont use delete node here since we won't use the old network for anything
+            network.nodes[key] = nil -- We dont use delete node here since we won't use the old network for anything
             minetest.chat_send_all("4")
-            while table.getn(network.nodes) > 0 do
+            while network:get_nodes_amount() > 0 do
                 minetest.chat_send_all("5")
-                local initial_node = math.random(table.getn(network.nodes))
+                local _,initial_key = get_random_node(network.nodes)
                 local new_network = n_class(nil, save_id)
                 minetest.chat_send_all("6")
-                new_network, network = recursive_add(new_network, network, network.nodes[initial_node].pos, set_value.types)
+                new_network, network = recursive_add(new_network, network, network.nodes[initial_key].pos, set_value.types)
                 minetest.chat_send_all("Done recursively adding.")
                 new_network:force_network_recalc()
                 minetest.chat_send_all("7")
@@ -258,7 +292,7 @@ function Network.get_adjacent_networks(pos, n_class, save_id)
     for _, adj_pos in pairs(connected_nodes) do
         ---@type Network
         local n = n_class(adj_pos, save_id)
-        if n.loaded then  
+        if n.loaded then
             local duplicate = false
             for _, network in pairs(networks) do
                 if(n.key == network.key) then duplicate = true end
@@ -301,4 +335,36 @@ end
 
 function Network.register_node(save_id, block_name)
     table.insert(Network.set_values[save_id].types,  block_name)
+end
+--[[
+Random id generator, adapted from -- --
+https://gist.github.com/haggen/2fd643ea9a261fea2094#gistcomment-2339900 -- --
+--                              --
+Generate random hex strings as uuids -- --
+]]
+local charset = {}  do -- [0-9a-f]
+    for c = 48, 57  do table.insert(charset, string.char(c)) end
+    for c = 97, 102 do table.insert(charset, string.char(c)) end
+end
+
+local function random_string(length)
+    if not length or length <= 0 then return '' end
+    math.randomseed(os.clock()^5)
+    return random_string(length - 1) .. charset[math.random(1, #charset)]
+end
+
+local function check_network_id_colission(save_id, id)
+    local return_v = false
+    for key,_ in pairs(get_set(save_id)) do
+        if key == id then return_v = true end
+    end
+    return return_v
+end
+
+function Network.generate_id(save_id)
+    local id = random_string(16)
+    while check_network_id_colission(save_id, id) do --Check we don't collide
+        id = random_string(16)
+    end
+    return id
 end
