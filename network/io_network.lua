@@ -48,7 +48,6 @@ end
 
 ---@param pos Position | nil
 function IO_network:update_infotext(pos)
-	minetest.chat_send_all("IO infotext called for " .. self.set_value.save_id .. " and key " .. tostring(self.key))
 	self._base.set_infotext(self, "Production: " .. self.production .. " Demand: " .. self.demand .. " Usage: " .. self.usage, pos)
 end
 
@@ -63,8 +62,6 @@ end
 function IO_network:add_node(node)
 	local update_needed = false
 	local key = self._base.add_node(self, node)
-	minetest.chat_send_all("IO add node called. key: " .. tostring(self.key) .. " save_id " .. tostring(self.set_value.save_id))
-	f_util.cdebug(node)
 	if node.production then
 		self:add_to_production_nodes(node.pos,key)
 		if node.production > 0 then
@@ -92,17 +89,22 @@ end
 
 ---@param pos Position
 function IO_network:delete_node(pos)
-	minetest.chat_send_all("IO delete node called. pos:" .. f_util.dump(pos) .. " key: " .. tostring(self.key) .. " save_id " .. tostring(self.set_value.save_id))
 	local node = self._base.delete_node(self,pos)
 	if node then -- If we get retuned a node, it means the network wasen't deleted
 		local update_needed = false
-		if node.production and node.production > 0 then
-			self.production = self.production - node.production
-			update_needed = true
+		if node.production then
+			self:remove_from_production_nodes(pos)
+		 	if node.production > 0 then
+				self.production = self.production - node.production
+				update_needed = true
+			end
 		end
-		if node.demand and node.demand > 0 then
-			self.demand = self.demand - node.demand
-			update_needed = true
+		if node.demand or node.usage then
+			self:remove_from_usage_nodes(pos)
+			if node.demand >0 then
+				self.demand = self.demand - node.demand
+				update_needed = true
+			end
 		end
 		if update_needed then
 			self:update_usage_nodes()
@@ -122,6 +124,16 @@ end
 function IO_network:add_to_usage_nodes(pos, key)
 	local node_name = minetest.get_node(pos).name
 	self.usage_nodes[key] = node_name
+end
+
+function IO_network:remove_from_production_nodes(pos)
+	local id = Network.to_node_id(pos)
+	self.production_nodes[id] = nil
+end
+
+function IO_network:remove_from_usage_nodes(pos)
+	local id = Network.to_node_id(pos)
+	self.usage_nodes[id] = nil
 end
 
 ---@param pos Position
@@ -176,11 +188,9 @@ end
 
 ---@param exclude_pos Position
 function IO_network:update_usage_nodes(exclude_pos)
-	minetest.chat_send_all("Update usage nodes called. key: " .. tostring(self.key) .. " save_id " .. tostring(self.set_value.save_id))
 	local old_pd = self.pdRatio or 0
 	self:calc_pdratio()
-	self.usage = self.demand *self.pdRatio
-	minetest.chat_send_all("Usage is " .. tostring(self.usage) .. " Demand is " .. tostring(self.demand) .. " Usage is " .. tostring(self.usage) .. " PDratio is " .. tostring(self.pdRatio))
+	self.usage = math.min(self.demand *self.pdRatio, self.demand)
 	if old_pd >= 1 and self.pdRatio >= 1  then -- We dont need to update usage nodes. There is no change
 	else -- We will need to update usgae nodes
 		for node_key, node_name in pairs(self.usage_nodes) do
@@ -192,7 +202,6 @@ function IO_network:update_usage_nodes(exclude_pos)
 				self:call_usage_node(node, node_name, usage)
 			end
 		end
-		minetest.chat_send_all("After for loop. Usage is " .. tostring(self.usage) .. " Demand is " .. tostring(self.demand) .. " Usage is " .. tostring(self.usage) .. " PDratio is " .. tostring(self.pdRatio))
 		self:update_infotext()
 	end
 end
@@ -200,12 +209,10 @@ end
 ---@param network IO_network
 function IO_network:merge(network)
 	self._base.merge(self, network)
-	minetest.chat_send_all("Io network merge called")
 	--self:force_network_recalc()
 end
 
 function IO_network:force_network_recalc()
-	minetest.chat_send_all("Network recalc called. key: " .. tostring(self.key) .. " save_id " .. tostring(self.set_value.save_id))
 	for key, node in pairs(self.nodes) do
 		if node.production then self:add_to_production_nodes(node.pos,key) end
 		if node.demand then self:add_to_usage_nodes(node.pos,key) end

@@ -16,7 +16,7 @@ function f_nodes.pipe()
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
             local n = IO_network(pos, "steam")
             n:update_infotext()
-            f_util.cdebug(n)
+            dump(n.nodes)
         end
     }
 end

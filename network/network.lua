@@ -18,12 +18,6 @@ local function get_random_node(nodes)
     return node,key
 end
 
----@param pos Position
----@return string
-local function to_node_id(pos)
-    return pos.x .. ";" .. pos.y .. ";" .. pos.z
-end
-
 local function split (inputstr, sep)
     if sep == nil then
             sep = "%s"
@@ -48,7 +42,6 @@ end
 ---@param pos Position
 ---@param types string[]
 local function recursive_add(network, old_network, pos, types)
-    minetest.chat_send_all("Recursively adding " .. f_util.dump(pos))
     for key, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
             network:add_node(node)
@@ -110,7 +103,7 @@ function Network:load(pos)
         --networkArea is used for quickly reducing the search space.
         local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos}) -- This might be redundant now
         if networkArea:containsp(pos) then
-            local node_key = to_node_id(pos)
+            local node_key = Network.to_node_id(pos)
             if network.nodes[node_key] then
                 self.key = key
                 self:from_save(network)
@@ -161,9 +154,15 @@ function Network:delete()
 end
 
 ---@param pos Position
+---@return string
+function Network.to_node_id(pos)
+    return pos.x .. ";" .. pos.y .. ";" .. pos.z
+end
+
+---@param pos Position
 ---@return Node, number
 function Network:get_node(pos)
-    local key = to_node_id(pos)
+    local key = Network.to_node_id(pos)
 	return self.nodes[key], key
 end
 
@@ -172,7 +171,7 @@ end
 function Network:add_node(node)
     self.min_pos = f_util.get_min_pos(self.min_pos, node.pos)
     self.max_pos = f_util.get_max_pos(self.max_pos, node.pos)
-    local key = to_node_id(node.pos)
+    local key = Network.to_node_id(node.pos)
     self.nodes[key] = node
     return key
 end
@@ -213,13 +212,11 @@ end
 
 ---@param message string
 function Network:set_infotext(message, pos)
-    minetest.chat_send_all("Pos:" .. f_util.dump(pos) .. "Setting this message ".. message)
     if pos then
         local meta = minetest.get_meta(pos)
         meta:set_string("infotext",  message)
     else
         for _, node in pairs(self.nodes) do
-            minetest.chat_send_all("Looped to node " .. f_util.dump(node))
             local meta = minetest.get_meta(node.pos)
             meta:set_string("infotext",  message)
         end
@@ -249,33 +246,20 @@ end
 function Network.on_node_destruction(save_id, pos, ensure_continuity, n_class)
     ---@type Network
     local set_value = Network.set_values[save_id]
-    minetest.chat_send_all("Calling constructor")
     local network = n_class(pos, save_id)
-    minetest.chat_send_all("Constructor called. Key is" .. tostring(network.key) .. " loaded is " ..tostring(network.loaded))
     local connected_nodes = f_util.get_adjacent_nodes(pos, set_value.types)
-    minetest.chat_send_all("1")
     if network.loaded then
         if table.getn(connected_nodes) > 1 and ensure_continuity == true then
-            minetest.chat_send_all("2")
             local node, key = network:get_node(pos)
-            minetest.chat_send_all("3")
             network.nodes[key] = nil -- We dont use delete node here since we won't use the old network for anything
-            minetest.chat_send_all("4")
             while network:get_nodes_amount() > 0 do
-                minetest.chat_send_all("5")
                 local _,initial_key = get_random_node(network.nodes)
                 local new_network = n_class(nil, save_id)
-                minetest.chat_send_all("6")
                 new_network, network = recursive_add(new_network, network, network.nodes[initial_key].pos, set_value.types)
-                minetest.chat_send_all("Done recursively adding.")
                 new_network:force_network_recalc()
-                minetest.chat_send_all("7")
                 new_network:save()
-                minetest.chat_send_all("8")
             end
-            minetest.chat_send_all("9")
             network:delete()
-            minetest.chat_send_all("After deleting old network")
         else
             network:delete_node(pos)
         end
