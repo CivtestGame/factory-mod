@@ -18,15 +18,15 @@ function f_nodes.turbine()
         tiles = {"^[colorize:#48a832"},
         groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
         after_place_node = function(pos, placer, itemstack, pointed_thing)
-            IO_network.on_node_place("electricity", {pos = pos}, "prod", 0)
-            IO_network.on_node_place("steam",{pos = pos}, "use", 10)
+            IO_network.on_node_place("electricity", {pos = pos, production = 0})
+            IO_network.on_node_place("steam",{pos = pos, demand=10})
         end,
-        on_destruct = function (pos)
-            IO_network.on_node_destruction("electricity", {pos = pos}, "prod", true)
-            IO_network.on_node_destruction("steam", {pos = pos}, "use", true)
+        after_destruct = function(pos, old_node)
+            IO_network.on_node_destruction("electricity", pos, "prod", true)
+            IO_network.on_node_destruction("steam", pos, "use", true)
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            --f_util.cdebug(node_network.get_network(f_constants.networks.electricity, pos))
+            f_util.cdebug(IO_network(pos, "electricity"):get_node(pos))
             f_util.cdebug(IO_network(pos, "steam"):get_node(pos))
         end,
     }

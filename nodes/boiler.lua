@@ -55,10 +55,10 @@ function f_nodes.boiler()
             meta:set_string("formspec", get_formspec(0))
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			IO_network.on_node_place("steam", {pos = pos}, "prod", 0)
+			IO_network.on_node_place("steam", {pos = pos, production = 0})
 		end,
-        on_destruct = function (pos)
-			IO_network.on_node_destruction("steam", {pos = pos}, "prod", true)
+        after_destruct = function(pos, old_node)
+			IO_network.on_node_destruction("steam", pos, "prod", true)
 		end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
             f_util.cdebug(IO_network(pos, "steam"):get_node(pos))
