@@ -21,7 +21,7 @@ function f_nodes.usage()
         end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
             local n = IO_network(pos, "electricity")
-            dump(n.nodes)
+            f_util.debug(n.nodes)
         end
     }
 end

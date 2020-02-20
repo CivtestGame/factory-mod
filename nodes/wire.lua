@@ -16,7 +16,7 @@ function f_nodes.wire()
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
             local n = IO_network(pos, "electricity")
             n:update_infotext()
-            dump(n.nodes)
+            f_util.debug(n.nodes)
         end
     }
 end

@@ -11,7 +11,7 @@ local function save_set(save_id, set)
 end
 
  -- Don't know if this is actually random, but it's semi-random and will do for it's one usecase
-local function get_random_node(nodes)    
+local function get_random_node(nodes)
     local f,t,key = pairs(nodes)
     local node
     key,node = f(t, key)
@@ -41,6 +41,7 @@ end
 ---@param old_network Network
 ---@param pos Position
 ---@param types string[]
+---@return Network, Network
 local function recursive_add(network, old_network, pos, types)
     for key, node in pairs(old_network.nodes) do
         if f_util.is_same_pos(node.pos, pos) then
@@ -81,8 +82,6 @@ local function construct(n, pos, save_id)
     if pos then n.loaded = n:load(pos) end
     if not n.loaded then
         minetest.chat_send_all("Network not found. Creating new")
-        n.min_pos = f_util.map_max_pos
-        n.max_pos = f_util.map_min_pos
         n.nodes = {}
         n:save()
     end
@@ -91,8 +90,6 @@ end
 ---@class Network
 ---@field public set_value SetValue
 ---@field public nodes Node[]
----@field public min_pos Position
----@field public max_pos Position
 ---@field public key number
 Network = class(construct)
 
@@ -100,15 +97,11 @@ Network = class(construct)
 ---@return boolean
 function Network:load(pos)
     for key, network in pairs(get_set(self.set_value.save_id)) do
-        --networkArea is used for quickly reducing the search space.
-        local networkArea = VoxelArea:new({MinEdge = network.min_pos, MaxEdge = network.max_pos}) -- This might be redundant now
-        if networkArea:containsp(pos) then
-            local node_key = Network.to_node_id(pos)
-            if network.nodes[node_key] then
-                self.key = key
-                self:from_save(network)
-                return true
-            end
+        local node_key = Network.to_node_id(pos)
+        if network.nodes[node_key] then
+            self.key = key
+            self:from_save(network)
+            return true
         end
     end
     return false
@@ -117,8 +110,6 @@ end
 ---@param network Network_save
 function Network:from_save(network)
     self.nodes = network.nodes
-    self.min_pos = network.min_pos
-    self.max_pos = network.max_pos
 end
 
 function Network:save()
@@ -128,7 +119,6 @@ function Network:save()
     end
     set[self.key] = self:to_save()
     minetest.chat_send_all("Saving this key " .. self.key .. " for this save_id " .. self.set_value.save_id)
-    f_util.cdebug(self.nodes)
     save_set(self.set_value.save_id, set)
 end
 
@@ -136,8 +126,6 @@ end
 function Network:to_save()
     local v = {}
     v.nodes = self.nodes
-    v.min_pos = self.min_pos
-    v.max_pos = self.max_pos
     return v
 end
 
@@ -169,8 +157,6 @@ end
 ---@param node Node
 ---@return number
 function Network:add_node(node)
-    self.min_pos = f_util.get_min_pos(self.min_pos, node.pos)
-    self.max_pos = f_util.get_max_pos(self.max_pos, node.pos)
     local key = Network.to_node_id(node.pos)
     self.nodes[key] = node
     return key
@@ -185,22 +171,11 @@ end
 ---@param pos Position
 ---@return Node | nil
 function Network:delete_node(pos)
-    --Reset the bounding box to the whole map so it can be shrunk to the right size in the for loop
-    self.min_pos = f_util.map_max_pos
-    self.max_pos = f_util.map_min_pos
-    local rnode --return values
-    for key,node in pairs(self.nodes) do
-        if f_util.is_same_pos(node.pos, pos) then
-            rnode = node
-            self.nodes[key] = nil
-        else
-            self.min_pos = f_util.get_min_pos(self.min_pos, node.pos)
-            self.max_pos = f_util.get_max_pos(self.max_pos, node.pos)
-        end
-    end
+    local node, key = Network:get_node(pos)
+    self.nodes[key] = nil
     if self:get_nodes_amount() > 0 then
         self:save()
-        return rnode
+        return node
     else self:delete() end
 end
 
