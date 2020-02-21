@@ -162,16 +162,19 @@ function IO_network:update_demand(pos, demand)
 	self:update_infotext()
 end
 
-function IO_network:check_burntime(pos, time)
-	self:load(pos)
-	local node, node_key = self:get_node(pos)
+function IO_network.check_burntime(pos, save_id)
+	local network = IO_network(pos, save_id)
+	local node, node_key = network:get_node(pos)
 	if not node.burn_end or os.time() >= node.burn_end then -- There is no burn time left, turn off the boiler
 		minetest.chat_send_all("Burn time is up!")
 		node.burn_end = nil
-		self:set_node(node, node_key)
-		self:update_production(pos, 0)
-		self:save()
+		network:set_node(node, node_key)
+		network:update_production(pos, 0)
+		network:save()
 		--Call same recalc function
+	elseif node.burn_end and os.time() < node.burn_end then
+		local diff = node.burn_end - os.time()
+		minetest.after(diff, IO_network.check_burntime, pos, save_id)
 	end	
 end
 

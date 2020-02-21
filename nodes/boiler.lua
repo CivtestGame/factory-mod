@@ -37,7 +37,7 @@ local function consume_fuel(pos, listname, index, stack, player)
 		network:update_production(pos, 10)
 		network:save()
 		f_util.cdebug(diff)
-		minetest.after(diff, network.check_burntime, network, pos, diff)
+		minetest.after(diff, IO_network.check_burntime, pos, "electricity")
 	end
 end
 
