@@ -3,6 +3,7 @@
         "minetest",
         "simplecrafting_lib",
         "vector",
-        "VoxelArea"
+        "VoxelArea",
+        "NodeNetwork"
     ]
 }

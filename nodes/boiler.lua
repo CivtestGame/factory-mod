@@ -27,7 +27,7 @@ local function consume_fuel(pos, listname, index, stack, player)
 		f_util.cdebug(total_time)
 		fuel_stack:clear()
 		inv:set_stack("fuel", 1,fuel_stack)
-		local network = IO_network(pos, "steam")
+		local network = NodeNetwork.IO_network(pos, "steam")
 		local node, node_key = network:get_node(pos)
 		local previous_value = node.burn_end
 		if not previous_value or previous_value < os.time() then previous_value = os.time() end
@@ -37,11 +37,11 @@ local function consume_fuel(pos, listname, index, stack, player)
 		network:update_production(pos, 10)
 		network:save()
 		f_util.cdebug(diff)
-		minetest.after(diff, IO_network.check_burntime, pos, "electricity")
+		minetest.after(diff, NodeNetwork.IO_network.check_burntime, pos, "steam")
 	end
 end
 
-IO_network.register_production_node("steam", name)
+NodeNetwork.register_production_node("steam", name)
 
 function f_nodes.boiler()   
     return name, {
@@ -55,13 +55,13 @@ function f_nodes.boiler()
             meta:set_string("formspec", get_formspec(0))
 		end,
 		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			IO_network.on_node_place("steam", {pos = pos, production = 0})
+			NodeNetwork.on_node_place("steam", {pos = pos, production = 0})
 		end,
         after_destruct = function(pos, old_node)
-			IO_network.on_node_destruction("steam", pos, "prod", true)
+			NodeNetwork.on_node_destruction("steam", pos, true)
 		end,
         on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            f_util.cdebug(IO_network(pos, "steam"):get_node(pos))
+            f_util.cdebug(NodeNetwork.IO_network(pos, "steam"):get_node(pos))
         end,
 		on_metadata_inventory_put = consume_fuel
     }

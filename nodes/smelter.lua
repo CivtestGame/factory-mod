@@ -525,7 +525,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:coke"] = 1 },
-      burntime = 10,
+      burntime = 20,
    }
 )
 
@@ -533,7 +533,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:charcoal"] = 1 },
-      burntime = 5,
+      burntime = 15,
    }
 )
 
@@ -541,7 +541,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:coal_lump"] = 1 },
-      burntime = 5,
+      burntime = 10,
    }
 )
 
@@ -549,7 +549,7 @@ simplecrafting_lib.register(
    "burner",
    {
       input = {
-         ["default:limestone"] = 1
+         ["default:limestone_dust"] = 2
       },
       output = "default:quicklime 1",
       cooktime = 5
@@ -572,7 +572,7 @@ simplecrafting_lib.register(
          ["default:coal_lump"] = 2
       },
       output = "default:coke 1",
-      cooktime = 20
+      cooktime = 5
 })
 
 simplecrafting_lib.register(
@@ -582,14 +582,24 @@ simplecrafting_lib.register(
          ["group:wood"] = 5
       },
       output = "default:charcoal 1",
-      cooktime = 20
+      cooktime = 10
 })
 
 simplecrafting_lib.register(
    "burner",
    {
       input = {
-         ["default:coal_lump"] = 99,
+         ["group:tree"] = 1
+      },
+      output = "default:charcoal 1",
+      cooktime = 2
+})
+
+simplecrafting_lib.register(
+   "burner",
+   {
+      input = {
+         ["default:quicklime"] = 99,
          ["default:charcoal"] = 99,
          ["default:coke"] = 99
       },

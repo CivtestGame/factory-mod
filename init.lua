@@ -11,12 +11,9 @@ local modpath = minetest.get_modpath(minetest.get_current_modname())
 
 --Various 'libraries'
 dofile(modpath .. "/util.lua")
-dofile(modpath .. "/network/helper_funcs.lua")
-dofile(modpath .. "/network/network.lua")
-dofile(modpath .. "/network/io_network.lua")
 
-Network.register_network("electricity", "Watt")
-Network.register_network("steam", "liter")
+NodeNetwork.register_network("electricity", "Watt", NodeNetwork.IO_network)
+NodeNetwork.register_network("steam", "liter", NodeNetwork.IO_network)
 
 --Nodes
 dofile(modpath .. "/nodes/boiler.lua")
