@@ -197,14 +197,6 @@ simplecrafting_lib.register(
 )
 
 simplecrafting_lib.register(
-   "advanced_smelter_fuel",
-   {
-      input = { ["default:charcoal"] = 1 },
-      burntime = 5,
-   }
-)
-
-simplecrafting_lib.register(
    "advanced_smelter",
    {
       input = {
@@ -320,14 +312,6 @@ simplecrafting_lib.register(
    {
       input = { ["default:coke"] = 1 },
       burntime = 10,
-   }
-)
-
-simplecrafting_lib.register(
-   "exceptional_smelter_fuel",
-   {
-      input = { ["default:charcoal"] = 1 },
-      burntime = 5,
    }
 )
 
