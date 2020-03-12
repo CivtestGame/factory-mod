@@ -1,5 +1,0 @@
-minetest.register_node(f_nodes.boiler())
-minetest.register_node(f_nodes.pipe())
-minetest.register_node(f_nodes.turbine())
-minetest.register_node(f_nodes.wire())
-minetest.register_node(f_nodes.usage())

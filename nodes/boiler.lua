@@ -41,29 +41,20 @@ local function consume_fuel(pos, listname, index, stack, player)
 	end
 end
 
+minetest.register_node(name, {
+    description = "Boiler",
+    tiles = {"^[colorize:#a83232"},
+    groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
+    on_construct = function(pos)
+        local meta = minetest.get_meta(pos)
+        local inv = meta:get_inventory()
+        inv:set_size('fuel', 1)
+    	meta:set_string("formspec", get_formspec(0))
+	end,
+    on_rightclick = function(pos, node, player, itemstack, pointed_thing)
+    	f_util.cdebug(NodeNetwork.IO_network(pos, "steam"):get_node(pos))
+    end,
+	on_metadata_inventory_put = consume_fuel
+})
+
 NodeNetwork.register_production_node("steam", name)
-
-function f_nodes.boiler()   
-    return name, {
-        description = "Boiler",
-        tiles = {"^[colorize:#a83232"},
-        groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
-        on_construct = function(pos)
-            local meta = minetest.get_meta(pos)
-            local inv = meta:get_inventory()
-            inv:set_size('fuel', 1)
-            meta:set_string("formspec", get_formspec(0))
-		end,
-		after_place_node = function(pos, placer, itemstack, pointed_thing)
-			NodeNetwork.on_node_place("steam", {pos = pos, production = 0})
-		end,
-        after_destruct = function(pos, old_node)
-			NodeNetwork.on_node_destruction("steam", pos, true)
-		end,
-        on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            f_util.cdebug(NodeNetwork.IO_network(pos, "steam"):get_node(pos))
-        end,
-		on_metadata_inventory_put = consume_fuel
-    }
-end
-

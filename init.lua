@@ -1,7 +1,6 @@
 fm = {}
 
 f_util = {}
-f_nodes = {}
 
 factory_mod_storage = minetest.get_mod_storage()
 
@@ -22,7 +21,5 @@ dofile(modpath .. "/nodes/pipe.lua")
 dofile(modpath .. "/nodes/wire.lua")
 dofile(modpath .. "/nodes/sample_usage.lua")
 dofile(modpath .. "/nodes/smelter.lua")
-
-dofile(modpath .. "/api.lua")
 
 return fm

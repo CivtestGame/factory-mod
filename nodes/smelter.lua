@@ -80,14 +80,16 @@ simplecrafting_lib.register(
       cooktime = 30
 })
 
+local advanced_smelter_recipe = {
+   ["default:bronze_ingot"] = 99,
+   ["default:tin_ingot"] = 198,
+   ["default:copper_ingot"] = 198
+}
+
 simplecrafting_lib.register(
    "smelter",
    {
-      input = {
-         ["default:bronze_ingot"] = 99,
-         ["default:tin_ingot"] = 99,
-         ["default:copper_ingot"] = 99
-      },
+      input = advanced_smelter_recipe,
       output = "factory_mod:advanced_smelter 1",
       cooktime = 30
 })

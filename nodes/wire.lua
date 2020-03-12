@@ -1,22 +1,14 @@
 local wire_name = minetest.get_current_modname()..":wire"
 
-NodeNetwork.register_node("electricity", wire_name)
+minetest.register_node(wire_name, {
+    description = "Wire",
+    tiles = {"^[colorize:#ebe134"},
+    groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
+    on_rightclick = function(pos, node, player, itemstack, pointed_thing)
+        local n = NodeNetwork.IO_network(pos, "electricity")
+        n:update_infotext()
+        f_util.debug(n.nodes)
+    end
+})
 
-function f_nodes.wire()
-    return wire_name, {
-        description = "Wire",
-        tiles = {"^[colorize:#ebe134"},
-        groups = {choppy = 2, oddly_breakable_by_hand = 2, wood = 1},
-        after_place_node = function(pos, placer, itemstack, pointed_thing)
-            NodeNetwork.on_node_place("electricity", {pos = pos})
-        end,
-        after_destruct = function(pos, old_node)
-            NodeNetwork.on_node_destruction("electricity", pos, true)
-        end,
-        on_rightclick = function(pos, node, player, itemstack, pointed_thing)
-            local n = NodeNetwork.IO_network(pos, "electricity")
-            n:update_infotext()
-            f_util.debug(n.nodes)
-        end
-    }
-end
+NodeNetwork.register_node("electricity", wire_name)
