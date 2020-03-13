@@ -1,4 +1,27 @@
 
+local MAXSTACK_SIZE = 99
+
+-- A function to created penalised factory drops.
+local function factory_drops_from_recipe(recipe, drop_reduction)
+   -- Essentially, converts a simplecrafting_lib recipe to something suitable
+   -- for use in a NodeDef's `drop` table. Multiplies the number of drops by
+   -- `drop_reduction` to apply a resource penalty to factory breakage.
+   local items = {}
+   for k, v in pairs(recipe) do
+      local maxstack_adjusted = math.floor(v / MAXSTACK_SIZE)
+      local maxstack_remainder = v % (maxstack_adjusted * MAXSTACK_SIZE)
+
+      for i = 1, maxstack_adjusted, 1 do
+         items[#items + 1] = k .. " " .. tostring(math.floor(MAXSTACK_SIZE * drop_reduction))
+      end
+      if maxstack_remainder > 0 then
+         items[#items + 1] = k .. " " .. tostring(math.floor(maxstack_remainder * drop_reduction))
+      end
+   end
+
+   return items
+end
+
 --------------------------------------------------------------------------------
 --
 -- Smelter
@@ -80,20 +103,6 @@ simplecrafting_lib.register(
       cooktime = 30
 })
 
-local advanced_smelter_recipe = {
-   ["default:bronze_ingot"] = 99,
-   ["default:tin_ingot"] = 198,
-   ["default:copper_ingot"] = 198
-}
-
-simplecrafting_lib.register(
-   "smelter",
-   {
-      input = advanced_smelter_recipe,
-      output = "factory_mod:advanced_smelter 1",
-      cooktime = 30
-})
-
 local smelter_fns = simplecrafting_lib.generate_multifurnace_functions("smelter", "smelter_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -105,21 +114,30 @@ local smelter_fns = simplecrafting_lib.generate_multifurnace_functions("smelter"
          -- append_to_formspec = "string",
 })
 
--- smelter_fns.allow_metadata_inventory_move
--- smelter_fns.allow_metadata_inventory_put
--- smelter_fns.allow_metadata_inventory_take
--- smelter_fns.can_dig
--- smelter_fns.on_construct
--- smelter_fns.on_metadata_inventory_move
--- smelter_fns.on_metadata_inventory_put
--- smelter_fns.on_metadata_inventory_take
--- smelter_fns.on_receive_fields
--- smelter_fns.on_timer
+-- Smelter Recipe
+
+local smelter_recipe = {
+   ["default:quicklime"] = 99,
+   ["default:charcoal"] = 99,
+   ["default:coke"] = 99
+}
+
+simplecrafting_lib.register(
+   "burner",
+   {
+      input = smelter_recipe,
+      output = "factory_mod:smelter 1",
+      cooktime = 30
+})
+
+smelter_fns.drop = {
+   max_items = 1,
+   items = {
+      { items = factory_drops_from_recipe(smelter_recipe, 0.5) }
+   }
+}
 
 --
--- Node definitions
---
-
 
 minetest.register_node("factory_mod:smelter", {
 	description = "Smelter",
@@ -143,7 +161,8 @@ minetest.register_node("factory_mod:smelter", {
         on_metadata_inventory_put = smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = smelter_fns.on_metadata_inventory_take,
         on_receive_fields = smelter_fns.on_receive_fields,
-        on_timer = smelter_fns.on_timer
+        on_timer = smelter_fns.on_timer,
+        drop = smelter_fns.drop
 })
 
 minetest.register_node("factory_mod:smelter_active", {
@@ -180,7 +199,8 @@ minetest.register_node("factory_mod:smelter_active", {
         on_metadata_inventory_put = smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = smelter_fns.on_metadata_inventory_take,
         on_receive_fields = smelter_fns.on_receive_fields,
-        on_timer = smelter_fns.on_timer
+        on_timer = smelter_fns.on_timer,
+        drop = smelter_fns.drop
 })
 
 --------------------------------------------------------------------------------
@@ -219,17 +239,6 @@ simplecrafting_lib.register(
       cooktime = 10
 })
 
-simplecrafting_lib.register(
-   "advanced_smelter",
-   {
-      input = {
-         ["default:bronze_ingot"] = 297,
-         ["default:iron_ingot"] = 297,
-      },
-      output = "factory_mod:exceptional_smelter 1",
-      cooktime = 30
-})
-
 local advanced_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("advanced_smelter", "advanced_smelter_fuel", {
       show_guides = true,
       alphabetize_items = true,
@@ -240,6 +249,31 @@ local advanced_smelter_fns = simplecrafting_lib.generate_multifurnace_functions(
          lock_in_mode = "endless", -- "count"
          -- append_to_formspec = "string",
 })
+
+-- Advanced Smelter Recipe
+
+local advanced_smelter_recipe = {
+   ["default:bronze_ingot"] = 99,
+   ["default:tin_ingot"] = 198,
+   ["default:copper_ingot"] = 198
+}
+
+simplecrafting_lib.register(
+   "smelter",
+   {
+      input = advanced_smelter_recipe,
+      output = "factory_mod:advanced_smelter 1",
+      cooktime = 30
+})
+
+advanced_smelter_fns.drop = {
+   max_items = 1,
+   items = {
+      { items = factory_drops_from_recipe(advanced_smelter_recipe, 0.5) }
+   }
+}
+
+--
 
 minetest.register_node("factory_mod:advanced_smelter", {
 	description = "Advanced Smelter",
@@ -263,7 +297,8 @@ minetest.register_node("factory_mod:advanced_smelter", {
         on_metadata_inventory_put = advanced_smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = advanced_smelter_fns.on_metadata_inventory_take,
         on_receive_fields = advanced_smelter_fns.on_receive_fields,
-        on_timer = advanced_smelter_fns.on_timer
+        on_timer = advanced_smelter_fns.on_timer,
+        drop = advanced_smelter_fns.drop
 })
 
 minetest.register_node("factory_mod:advanced_smelter_active", {
@@ -300,7 +335,8 @@ minetest.register_node("factory_mod:advanced_smelter_active", {
         on_metadata_inventory_put = advanced_smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = advanced_smelter_fns.on_metadata_inventory_take,
         on_receive_fields = advanced_smelter_fns.on_receive_fields,
-        on_timer = advanced_smelter_fns.on_timer
+        on_timer = advanced_smelter_fns.on_timer,
+        drop = advanced_smelter_fns.drop
 })
 
 --------------------------------------------------------------------------------
@@ -359,6 +395,30 @@ local exceptional_smelter_fns = simplecrafting_lib.generate_multifurnace_functio
          -- append_to_formspec = "string",
 })
 
+-- Exceptional Smelter Recipe
+
+local exceptional_smelter_recipe = {
+   ["default:bronze_ingot"] = 297,
+   ["default:iron_ingot"] = 297,
+}
+
+simplecrafting_lib.register(
+   "advanced_smelter",
+   {
+      input = exceptional_smelter_recipe,
+      output = "factory_mod:exceptional_smelter 1",
+      cooktime = 30
+})
+
+exceptional_smelter_fns.drop = {
+   max_items = 1,
+   items = {
+      { items = factory_drops_from_recipe(exceptional_smelter_recipe, 0.5) }
+   }
+}
+
+--
+
 minetest.register_node("factory_mod:exceptional_smelter", {
 	description = "Exceptional Smelter",
 	tiles = {
@@ -381,7 +441,8 @@ minetest.register_node("factory_mod:exceptional_smelter", {
         on_metadata_inventory_put = exceptional_smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = exceptional_smelter_fns.on_metadata_inventory_take,
         on_receive_fields = exceptional_smelter_fns.on_receive_fields,
-        on_timer = exceptional_smelter_fns.on_timer
+        on_timer = exceptional_smelter_fns.on_timer,
+        drop = exceptional_smelter_fns.drop
 })
 
 minetest.register_node("factory_mod:exceptional_smelter_active", {
@@ -418,7 +479,8 @@ minetest.register_node("factory_mod:exceptional_smelter_active", {
         on_metadata_inventory_put = exceptional_smelter_fns.on_metadata_inventory_put,
         on_metadata_inventory_take = exceptional_smelter_fns.on_metadata_inventory_take,
         on_receive_fields = exceptional_smelter_fns.on_receive_fields,
-        on_timer = exceptional_smelter_fns.on_timer
+        on_timer = exceptional_smelter_fns.on_timer,
+        drop = exceptional_smelter_fns.drop
 })
 
 
@@ -579,18 +641,6 @@ simplecrafting_lib.register(
       },
       output = "default:charcoal 1",
       cooktime = 2
-})
-
-simplecrafting_lib.register(
-   "burner",
-   {
-      input = {
-         ["default:quicklime"] = 99,
-         ["default:charcoal"] = 99,
-         ["default:coke"] = 99
-      },
-      output = "factory_mod:smelter 1",
-      cooktime = 30
 })
 
 local burner_fns = simplecrafting_lib.generate_multifurnace_functions("burner", "burner_fuel", {
