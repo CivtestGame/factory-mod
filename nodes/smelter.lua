@@ -724,3 +724,172 @@ minetest.register_craft({
 		{'group:stone', 'group:stone', 'group:stone'},
 	}
 })
+
+--------------------------------------------------------------------------------
+--
+-- Stone Smelter
+--
+--------------------------------------------------------------------------------
+
+simplecrafting_lib.register(
+   "stone_smelter_fuel",
+   {
+      input = { ["default:coke"] = 1 },
+      burntime = 80,
+   }
+)
+
+simplecrafting_lib.register(
+   "stone_smelter_fuel",
+   {
+      input = { ["default:charcoal"] = 1 },
+      burntime = 40,
+   }
+)
+
+simplecrafting_lib.register(
+   "stone_smelter_fuel",
+   {
+      input = { ["default:coal_lump"] = 1 },
+      burntime = 40,
+   }
+)
+
+simplecrafting_lib.register(
+   "stone_smelter",
+   {
+      input = {
+         ["default:cobble"] = 1
+      },
+      output = "default:stone 1",
+      cooktime = 2
+})
+
+simplecrafting_lib.register(
+   "stone_smelter",
+   {
+      input = {
+         ["default:desert_sand"] = 2
+      },
+      output = "default:desert_sandstone 1",
+      cooktime = 2
+})
+
+simplecrafting_lib.register(
+   "stone_smelter",
+   {
+      input = {
+         ["default:sand"] = 2
+      },
+      output = "default:sandstone 1",
+      cooktime = 2
+})
+
+simplecrafting_lib.register(
+   "stone_smelter",
+   {
+      input = {
+         ["default:silver_sand"] = 2
+      },
+      output = "default:silver_sandstone 1",
+      cooktime = 2
+})
+
+local stone_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("stone_smelter", "stone_smelter_fuel", {
+      show_guides = true,
+      alphabetize_items = true,
+      description = "Stone Smelter",
+      protect_inventory = true,
+--      crafting_time_multiplier = function(pos, recipe),
+         active_node = "factory_mod:stone_smelter_active",
+         lock_in_mode = "endless", -- "count"
+         -- append_to_formspec = "string",
+})
+
+-- Stone Smelter Recipe
+
+local stone_smelter_recipe = {
+   ["default:stone"] = 297,
+   ["default:coal"] = 99
+}
+
+simplecrafting_lib.register(
+   "burner",
+   {
+      input = stone_smelter_recipe,
+      output = "factory_mod:stone_smelter 1",
+      cooktime = 30
+})
+
+stone_smelter_fns.drop = {
+   max_items = 1,
+   items = {
+      { items = factory_drops_from_recipe(stone_smelter_recipe, 0.5) }
+   }
+}
+
+--
+
+minetest.register_node("factory_mod:stone_smelter", {
+	description = "Stone Smelter",
+	tiles = {
+		"default_furnace_top.png", "default_furnace_bottom.png",
+		"default_furnace_side.png", "default_furnace_side.png",
+		"default_furnace_side.png", "default_stone_smelter_front.png"
+	},
+	paramtype2 = "facedir",
+	groups = {cracky=2},
+	legacy_facedir_simple = true,
+	is_ground_content = false,
+	sounds = default.node_sound_stone_defaults(),
+
+        allow_metadata_inventory_move = stone_smelter_fns.allow_metadata_inventory_move,
+        allow_metadata_inventory_put = stone_smelter_fns.allow_metadata_inventory_put,
+        allow_metadata_inventory_take = stone_smelter_fns.allow_metadata_inventory_take,
+        can_dig = stone_smelter_fns.can_dig,
+        on_construct = stone_smelter_fns.on_construct,
+        on_metadata_inventory_move = stone_smelter_fns.on_metadata_inventory_move,
+        on_metadata_inventory_put = stone_smelter_fns.on_metadata_inventory_put,
+        on_metadata_inventory_take = stone_smelter_fns.on_metadata_inventory_take,
+        on_receive_fields = stone_smelter_fns.on_receive_fields,
+        on_timer = stone_smelter_fns.on_timer,
+        drop = stone_smelter_fns.drop
+})
+
+minetest.register_node("factory_mod:stone_smelter_active", {
+	description = "Stone Smelter",
+	tiles = {
+		"default_furnace_top.png", "default_furnace_bottom.png",
+		"default_furnace_side.png", "default_furnace_side.png",
+		"default_furnace_side.png",
+		{
+			image = "default_stone_smelter_front_active.png",
+			backface_culling = false,
+			animation = {
+				type = "vertical_frames",
+				aspect_w = 16,
+				aspect_h = 16,
+				length = 1.5
+			},
+		}
+	},
+	paramtype2 = "facedir",
+	light_source = 8,
+	drop = "factory_mod:stone_smelter",
+	groups = {cracky=2, not_in_creative_inventory=1},
+	legacy_facedir_simple = true,
+	is_ground_content = false,
+	sounds = default.node_sound_stone_defaults(),
+
+        allow_metadata_inventory_move = stone_smelter_fns.allow_metadata_inventory_move,
+        allow_metadata_inventory_put = stone_smelter_fns.allow_metadata_inventory_put,
+        allow_metadata_inventory_take = stone_smelter_fns.allow_metadata_inventory_take,
+        can_dig = stone_smelter_fns.can_dig,
+        on_construct = stone_smelter_fns.on_construct,
+        on_metadata_inventory_move = stone_smelter_fns.on_metadata_inventory_move,
+        on_metadata_inventory_put = stone_smelter_fns.on_metadata_inventory_put,
+        on_metadata_inventory_take = stone_smelter_fns.on_metadata_inventory_take,
+        on_receive_fields = stone_smelter_fns.on_receive_fields,
+        on_timer = stone_smelter_fns.on_timer,
+        drop = stone_smelter_fns.drop
+})
