@@ -810,7 +810,10 @@ local stone_smelter_fns = simplecrafting_lib.generate_multifurnace_functions("st
 
 local stone_smelter_recipe = {
    ["default:stone"] = 297,
-   ["default:coal"] = 99
+   ["default:sandstone"] = 99,
+   ["default:silver_sandstone"] = 99,
+   ["default:desert_sandstone"] = 99,
+   ["default:coal_lump"] = 198
 }
 
 simplecrafting_lib.register(
