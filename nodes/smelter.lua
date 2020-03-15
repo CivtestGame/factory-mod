@@ -53,6 +53,14 @@ simplecrafting_lib.register(
 )
 
 simplecrafting_lib.register(
+   "smelter_fuel",
+   {
+      input = { ["default:coalblock"] = 1 },
+      burntime = 45,
+   }
+)
+
+simplecrafting_lib.register(
    "smelter",
    {
       input = {
@@ -594,6 +602,14 @@ simplecrafting_lib.register(
 )
 
 simplecrafting_lib.register(
+   "smelter_fuel",
+   {
+      input = { ["default:coalblock"] = 1 },
+      burntime = 90,
+   }
+)
+
+simplecrafting_lib.register(
    "burner",
    {
       input = {
@@ -752,6 +768,14 @@ simplecrafting_lib.register(
    {
       input = { ["default:coal_lump"] = 1 },
       burntime = 40,
+   }
+)
+
+simplecrafting_lib.register(
+   "smelter_fuel",
+   {
+      input = { ["default:coalblock"] = 1 },
+      burntime = 360,
    }
 )
 
