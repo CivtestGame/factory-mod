@@ -581,7 +581,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:coke"] = 1 },
-      burntime = 20,
+      burntime = 50,
    }
 )
 
@@ -589,7 +589,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:charcoal"] = 1 },
-      burntime = 15,
+      burntime = 30,
    }
 )
 
@@ -597,7 +597,7 @@ simplecrafting_lib.register(
    "burner_fuel",
    {
       input = { ["default:coal_lump"] = 1 },
-      burntime = 10,
+      burntime = 30,
    }
 )
 
@@ -605,7 +605,7 @@ simplecrafting_lib.register(
    "smelter_fuel",
    {
       input = { ["default:coalblock"] = 1 },
-      burntime = 90,
+      burntime = 9*30,
    }
 )
 
