@@ -655,7 +655,7 @@ simplecrafting_lib.register(
       input = {
          ["group:tree"] = 1
       },
-      output = "default:charcoal 1",
+      output = "default:charcoal 2",
       cooktime = 2
 })
 
